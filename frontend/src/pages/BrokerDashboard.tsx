@@ -73,6 +73,8 @@ export const BrokerDashboard: React.FC = () => {
   const [projDescription, setProjDescription] = useState('');
   const [projLocation, setProjLocation] = useState('');
   const [projImgUrl, setProjImgUrl] = useState('');
+  const [activeProjectDetails, setActiveProjectDetails] = useState<Project | null>(null);
+  const [showProjectDetailsModal, setShowProjectDetailsModal] = useState(false);
   const [showEditor, setShowEditor] = useState(false);
   const [editingListing, setEditingListing] = useState<Listing | null>(null);
 
@@ -931,7 +933,14 @@ export const BrokerDashboard: React.FC = () => {
                 const query = projSearchQuery.toLowerCase();
                 return p.title.toLowerCase().includes(query) || (p.location && p.location.toLowerCase().includes(query));
               }).map(proj => (
-                <div key={proj.id} className="glass-panel" style={{ display: 'flex', flexDirection: 'column', backgroundColor: 'white', color: 'var(--primary)', borderRadius: 'var(--radius)', overflow: 'hidden', padding: '0px', borderTop: '4px solid var(--accent)' }}>
+                <div 
+                  key={proj.id} 
+                  className="glass-panel" 
+                  onClick={() => { setActiveProjectDetails(proj); setShowProjectDetailsModal(true); }}
+                  style={{ display: 'flex', flexDirection: 'column', backgroundColor: 'white', color: 'var(--primary)', borderRadius: 'var(--radius)', overflow: 'hidden', padding: '0px', borderTop: '4px solid var(--accent)', cursor: 'pointer', transition: 'transform 0.2s', transform: 'scale(1)' }}
+                  onMouseEnter={(e) => { e.currentTarget.style.transform = 'scale(1.02)'; }}
+                  onMouseLeave={(e) => { e.currentTarget.style.transform = 'scale(1)'; }}
+                >
                   {proj.imgUrl ? (
                     <img src={proj.imgUrl} alt={proj.title} style={{ width: '100%', height: '180px', objectFit: 'cover' }} />
                   ) : (
@@ -948,22 +957,66 @@ export const BrokerDashboard: React.FC = () => {
                         📍 {proj.location || (language === 'ar' ? 'موقع غير محدد' : 'Unknown location')}
                       </span>
                       
-                      <div style={{ fontSize: '0.85rem', color: '#444', lineHeight: '1.5', whiteSpace: 'pre-line', marginBottom: '15px' }}>
+                      <div style={{ fontSize: '0.85rem', color: '#444', lineHeight: '1.5', whiteSpace: 'pre-line', marginBottom: '15px', overflow: 'hidden', textOverflow: 'ellipsis', display: '-webkit-box', WebkitLineClamp: 3, WebkitBoxOrient: 'vertical' }}>
                         {proj.description || '—'}
                       </div>
                     </div>
                     
-                    <div style={{ display: 'flex', justifyContent: 'flex-end', gap: '8px', borderTop: '1px solid rgba(0,0,0,0.08)', paddingTop: '15px', marginTop: '10px' }}>
-                      <button onClick={() => handleEditProject(proj)} className="btn btn-secondary" style={{ padding: '4px 10px', fontSize: '0.75rem', color: 'var(--primary)' }}>
+                    <div style={{ display: 'flex', justifyContent: 'flex-end', gap: '8px', borderTop: '1px solid rgba(0,0,0,0.08)', paddingTop: '15px', marginTop: '10px' }} onClick={e => e.stopPropagation()}>
+                      <button onClick={(e) => { e.stopPropagation(); handleEditProject(proj); }} className="btn btn-secondary" style={{ padding: '4px 10px', fontSize: '0.75rem', color: 'var(--primary)' }}>
                         {language === 'ar' ? 'تعديل' : 'Edit'}
                       </button>
-                      <button onClick={() => handleDeleteProject(proj.id)} className="btn" style={{ padding: '4px 10px', fontSize: '0.75rem', backgroundColor: 'rgba(239, 68, 68, 0.15)', color: '#ef4444', border: 'none' }}>
+                      <button onClick={(e) => { e.stopPropagation(); handleDeleteProject(proj.id); }} className="btn" style={{ padding: '4px 10px', fontSize: '0.75rem', backgroundColor: 'rgba(239, 68, 68, 0.15)', color: '#ef4444', border: 'none' }}>
                         {language === 'ar' ? 'حذف' : 'Delete'}
                       </button>
                     </div>
                   </div>
                 </div>
               ))}
+            </div>
+          )}
+
+          {/* Project Details Modal */}
+          {showProjectDetailsModal && activeProjectDetails && (
+            <div 
+              style={{ position: 'fixed', top: 0, left: 0, right: 0, bottom: 0, backgroundColor: 'rgba(0,0,0,0.6)', display: 'flex', justifyContent: 'center', alignItems: 'center', zIndex: 1000, padding: '20px' }}
+              onClick={() => setShowProjectDetailsModal(false)}
+            >
+              <div 
+                className="glass-panel" 
+                style={{ backgroundColor: 'white', maxWidth: '650px', width: '100%', padding: '0px', color: 'var(--primary)', borderRadius: 'var(--radius)', overflow: 'hidden' }}
+                onClick={e => e.stopPropagation()}
+              >
+                {activeProjectDetails.imgUrl ? (
+                  <img src={activeProjectDetails.imgUrl} alt={activeProjectDetails.title} style={{ width: '100%', height: '240px', objectFit: 'cover' }} />
+                ) : (
+                  <div style={{ width: '100%', height: '160px', background: 'linear-gradient(135deg, var(--primary) 0%, #1e355e 100%)', display: 'flex', alignItems: 'center', justifyContent: 'center', color: 'white', flexDirection: 'column', gap: '10px' }}>
+                    <Layers size={48} style={{ opacity: 0.6 }} />
+                  </div>
+                )}
+                
+                <div style={{ padding: '25px' }}>
+                  <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', borderBottom: '1px solid rgba(0,0,0,0.1)', paddingBottom: '15px', marginBottom: '15px' }}>
+                    <div>
+                      <h3 style={{ fontSize: '1.4rem', color: 'var(--primary)', fontWeight: 'bold', display: 'flex', alignItems: 'center', gap: '8px' }}>📂 {activeProjectDetails.title}</h3>
+                      <span style={{ fontSize: '0.85rem', color: 'var(--text-muted)', display: 'block', marginTop: '6px' }}>
+                        📍 {activeProjectDetails.location || (language === 'ar' ? 'موقع غير محدد' : 'Unknown location')}
+                      </span>
+                    </div>
+                    <button onClick={() => setShowProjectDetailsModal(false)} style={{ border: 'none', background: 'rgba(0,0,0,0.05)', fontSize: '1rem', cursor: 'pointer', color: 'var(--primary)', padding: '5px 10px', borderRadius: '50%' }}>✕</button>
+                  </div>
+                  
+                  <div style={{ maxHeight: '300px', overflowY: 'auto', paddingRight: '5px', fontSize: '0.95rem', color: '#333', lineHeight: '1.6', whiteSpace: 'pre-line' }}>
+                    {activeProjectDetails.description || (language === 'ar' ? 'لا يوجد تفاصيل إضافية مكتوبة.' : 'No description provided.')}
+                  </div>
+                  
+                  <div style={{ display: 'flex', justifyContent: 'flex-end', marginTop: '20px', paddingTop: '15px', borderTop: '1px solid rgba(0,0,0,0.1)' }}>
+                    <button onClick={() => setShowProjectDetailsModal(false)} className="btn btn-primary" style={{ padding: '6px 20px', fontSize: '0.85rem' }}>
+                      {language === 'ar' ? 'إغلاق' : 'Close'}
+                    </button>
+                  </div>
+                </div>
+              </div>
             </div>
           )}
         </div>
