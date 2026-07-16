@@ -403,11 +403,19 @@ export const BrokerDashboard: React.FC = () => {
       if (response.ok) {
         fetchCRMLeads();
       } else {
-        const errData = await response.json();
-        alert(language === 'ar' ? `فشل الحذف: ${errData.message}` : `Delete failed: ${errData.message}`);
+        let errMsg = 'Unknown error';
+        try {
+          const errData = await response.json();
+          errMsg = errData.message || errMsg;
+        } catch (jsonErr) {
+          try {
+            errMsg = await response.text();
+          } catch (textErr) {}
+        }
+        alert(language === 'ar' ? `فشل الحذف (${response.status}): ${errMsg.slice(0, 150)}` : `Delete failed (${response.status}): ${errMsg.slice(0, 150)}`);
       }
-    } catch (e) {
-      alert(language === 'ar' ? 'حدث خطأ في الاتصال بالخادم.' : 'Server connection error.');
+    } catch (e: any) {
+      alert(language === 'ar' ? `حدث خطأ في الاتصال: ${e.message}` : `Connection error: ${e.message}`);
     }
   };
 
