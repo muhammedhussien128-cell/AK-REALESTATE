@@ -445,7 +445,7 @@ router.put('/crm/leads/:id', authenticateToken, requireRole(['broker']), (req: a
 router.delete('/crm/leads/:id', authenticateToken, requireRole(['broker']), (req: any, res) => {
   const { id } = req.params;
   const leads = loadLeads();
-  const index = leads.findIndex((l: any) => l.tenant_id === req.tenantId && l.id === id && l.broker_id === req.user.id);
+  const index = leads.findIndex((l: any) => l.tenant_id === req.tenantId && l.id === id && (!l.broker_id || l.broker_id === req.user.id));
   
   if (index !== -1) {
     leads.splice(index, 1);

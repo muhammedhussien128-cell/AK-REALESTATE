@@ -402,8 +402,13 @@ export const BrokerDashboard: React.FC = () => {
       });
       if (response.ok) {
         fetchCRMLeads();
+      } else {
+        const errData = await response.json();
+        alert(language === 'ar' ? `فشل الحذف: ${errData.message}` : `Delete failed: ${errData.message}`);
       }
-    } catch (e) {}
+    } catch (e) {
+      alert(language === 'ar' ? 'حدث خطأ في الاتصال بالخادم.' : 'Server connection error.');
+    }
   };
 
   const isSuperAdmin = user?.id === 'b1111111-1111-1111-1111-111111111111';
