@@ -1,0 +1,8 @@
+{
+  "rewrites": [
+    {
+      "source": "/api/:path*",
+      "destination": "https://ak-realestate-rmby.vercel.app/api/:path*"
+    }
+  ]
+}
