@@ -54,18 +54,22 @@ export const BrokerDashboard: React.FC = () => {
   const [dashboardSubTab, setDashboardSubTab] = useState<'analytics' | 'listings' | 'crm' | 'settings' | 'projects'>('analytics');
   
   // Projects Reference Module States
-  interface Project {
+  interface DeveloperDetails {
     id: string;
-    tenant_id: string;
-    broker_id: string;
-    title: string;
-    developer: string;
-    location: string;
+    name: string;
     startPrice: string;
     installmentYears: string;
     deliveryDate: string;
     brochureUrl: string;
     notes: string;
+  }
+  interface Project {
+    id: string;
+    tenant_id: string;
+    broker_id: string;
+    title: string;
+    location: string;
+    developers: DeveloperDetails[];
     created_at: string;
   }
   const [projects, setProjects] = useState<Project[]>([]);
@@ -74,13 +78,18 @@ export const BrokerDashboard: React.FC = () => {
   const [projSearchQuery, setProjSearchQuery] = useState('');
 
   const [projTitle, setProjTitle] = useState('');
-  const [projDeveloper, setProjDeveloper] = useState('');
   const [projLocation, setProjLocation] = useState('');
-  const [projStartPrice, setProjStartPrice] = useState('');
-  const [projInstallmentYears, setProjInstallmentYears] = useState('');
-  const [projDeliveryDate, setProjDeliveryDate] = useState('');
-  const [projBrochureUrl, setProjBrochureUrl] = useState('');
-  const [projNotes, setProjNotes] = useState('');
+  const [projDevelopers, setProjDevelopers] = useState<DeveloperDetails[]>([]);
+
+  // State to hold inputs for a single developer being added/edited
+  const [tempDevId, setTempDevId] = useState<string | null>(null);
+  const [tempDevName, setTempDevName] = useState('');
+  const [tempDevStartPrice, setTempDevStartPrice] = useState('');
+  const [tempDevInstallment, setTempDevInstallment] = useState('');
+  const [tempDevDelivery, setTempDevDelivery] = useState('');
+  const [tempDevBrochure, setTempDevBrochure] = useState('');
+  const [tempDevNotes, setTempDevNotes] = useState('');
+  const [showDevForm, setShowDevForm] = useState(false);
 
   const [showEditor, setShowEditor] = useState(false);
   const [editingListing, setEditingListing] = useState<Listing | null>(null);
@@ -206,13 +215,8 @@ export const BrokerDashboard: React.FC = () => {
 
     const payload = {
       title: projTitle,
-      developer: projDeveloper,
       location: projLocation,
-      startPrice: projStartPrice,
-      installmentYears: projInstallmentYears,
-      deliveryDate: projDeliveryDate,
-      brochureUrl: projBrochureUrl,
-      notes: projNotes
+      developers: projDevelopers
     };
 
     try {
@@ -234,13 +238,8 @@ export const BrokerDashboard: React.FC = () => {
         setShowProjectEditor(false);
         setEditingProject(null);
         setProjTitle('');
-        setProjDeveloper('');
         setProjLocation('');
-        setProjStartPrice('');
-        setProjInstallmentYears('');
-        setProjDeliveryDate('');
-        setProjBrochureUrl('');
-        setProjNotes('');
+        setProjDevelopers([]);
       }
     } catch (err) {}
   };
@@ -248,14 +247,53 @@ export const BrokerDashboard: React.FC = () => {
   const handleEditProject = (proj: Project) => {
     setEditingProject(proj);
     setProjTitle(proj.title);
-    setProjDeveloper(proj.developer);
     setProjLocation(proj.location);
-    setProjStartPrice(proj.startPrice);
-    setProjInstallmentYears(proj.installmentYears);
-    setProjDeliveryDate(proj.deliveryDate);
-    setProjBrochureUrl(proj.brochureUrl);
-    setProjNotes(proj.notes);
+    setProjDevelopers(proj.developers || []);
     setShowProjectEditor(true);
+  };
+
+  const handleAddTempDeveloper = () => {
+    if (!tempDevName) return;
+
+    const newDev: DeveloperDetails = {
+      id: tempDevId || 'dev_' + Math.random().toString(36).substr(2, 9),
+      name: tempDevName,
+      startPrice: tempDevStartPrice,
+      installmentYears: tempDevInstallment,
+      deliveryDate: tempDevDelivery,
+      brochureUrl: tempDevBrochure,
+      notes: tempDevNotes
+    };
+
+    if (tempDevId) {
+      setProjDevelopers(projDevelopers.map(d => d.id === tempDevId ? newDev : d));
+    } else {
+      setProjDevelopers([...projDevelopers, newDev]);
+    }
+
+    setTempDevId(null);
+    setTempDevName('');
+    setTempDevStartPrice('');
+    setTempDevInstallment('');
+    setTempDevDelivery('');
+    setTempDevBrochure('');
+    setTempDevNotes('');
+    setShowDevForm(false);
+  };
+
+  const handleEditTempDeveloper = (dev: DeveloperDetails) => {
+    setTempDevId(dev.id);
+    setTempDevName(dev.name);
+    setTempDevStartPrice(dev.startPrice);
+    setTempDevInstallment(dev.installmentYears);
+    setTempDevDelivery(dev.deliveryDate);
+    setTempDevBrochure(dev.brochureUrl);
+    setTempDevNotes(dev.notes);
+    setShowDevForm(true);
+  };
+
+  const handleRemoveTempDeveloper = (devId: string) => {
+    setProjDevelopers(projDevelopers.filter(d => d.id !== devId));
   };
 
   const handleDeleteProject = async (projId: string) => {
@@ -896,13 +934,8 @@ export const BrokerDashboard: React.FC = () => {
               onClick={() => {
                 setEditingProject(null);
                 setProjTitle('');
-                setProjDeveloper('');
                 setProjLocation('');
-                setProjStartPrice('');
-                setProjInstallmentYears('');
-                setProjDeliveryDate('');
-                setProjBrochureUrl('');
-                setProjNotes('');
+                setProjDevelopers([]);
                 setShowProjectEditor(true);
               }} 
               className="btn btn-primary"
@@ -924,34 +957,77 @@ export const BrokerDashboard: React.FC = () => {
                   <input type="text" className="form-control" value={projTitle} onChange={e => setProjTitle(e.target.value)} required />
                 </div>
                 <div>
-                  <label style={{ display: 'block', marginBottom: '5px', fontSize: '0.85rem', color: 'var(--text-muted)' }}>{language === 'ar' ? 'المطور العقاري' : 'Developer'}</label>
-                  <input type="text" className="form-control" value={projDeveloper} onChange={e => setProjDeveloper(e.target.value)} />
-                </div>
-                <div>
-                  <label style={{ display: 'block', marginBottom: '5px', fontSize: '0.85rem', color: 'var(--text-muted)' }}>{language === 'ar' ? 'الموقع بالتفصيل' : 'Location'}</label>
+                  <label style={{ display: 'block', marginBottom: '5px', fontSize: '0.85rem', color: 'var(--text-muted)' }}>{language === 'ar' ? 'الموقع العام للمشروع' : 'Location'}</label>
                   <input type="text" className="form-control" value={projLocation} onChange={e => setProjLocation(e.target.value)} />
                 </div>
-                <div>
-                  <label style={{ display: 'block', marginBottom: '5px', fontSize: '0.85rem', color: 'var(--text-muted)' }}>{language === 'ar' ? 'السعر يبدأ من (جنيه)' : 'Starting Price (EGP)'}</label>
-                  <input type="text" className="form-control" value={projStartPrice} onChange={e => setProjStartPrice(e.target.value)} />
+
+                {/* Added Developers List inside the editor */}
+                <div style={{ gridColumn: 'span 2', marginTop: '15px' }}>
+                  <strong style={{ display: 'block', marginBottom: '10px', fontSize: '0.95rem', color: 'white' }}>
+                    {language === 'ar' ? 'المطورون العقاريون داخل المشروع وطرق سدادهم:' : 'Developers for this project:'}
+                  </strong>
+                  {projDevelopers.length === 0 ? (
+                    <p style={{ color: 'var(--text-muted)', fontSize: '0.8rem' }}>{language === 'ar' ? 'لا يوجد مطورين مضافين حالياً. يرجى إضافة مطور عقاري واحد على الأقل بالأسفل.' : 'No developers added yet.'}</p>
+                  ) : (
+                    <div style={{ display: 'flex', flexDirection: 'column', gap: '8px', marginBottom: '15px' }}>
+                      {projDevelopers.map(dev => (
+                        <div key={dev.id} style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', padding: '8px 12px', backgroundColor: 'rgba(255,255,255,0.05)', borderRadius: 'var(--radius-sm)' }}>
+                          <div>
+                            <strong style={{ color: 'var(--accent)', fontSize: '0.85rem' }}>🏢 {dev.name}</strong>
+                            <span style={{ fontSize: '0.75rem', color: 'var(--text-muted)', marginRight: '10px' }}>
+                              ({dev.startPrice ? `${Number(dev.startPrice).toLocaleString('ar-EG')} ج` : ''} - {dev.installmentYears ? `${dev.installmentYears} سنوات` : ''})
+                            </span>
+                          </div>
+                          <div style={{ display: 'flex', gap: '8px' }}>
+                            <button type="button" onClick={() => handleEditTempDeveloper(dev)} className="btn btn-secondary" style={{ padding: '3px 8px', fontSize: '0.7rem' }}>{language === 'ar' ? 'تعديل' : 'Edit'}</button>
+                            <button type="button" onClick={() => handleRemoveTempDeveloper(dev.id)} className="btn" style={{ padding: '3px 8px', fontSize: '0.7rem', backgroundColor: 'rgba(239,68,68,0.15)', color: '#ef4444', border: 'none' }}>{language === 'ar' ? 'إزالة' : 'Remove'}</button>
+                          </div>
+                        </div>
+                      ))}
+                    </div>
+                  )}
+                  
+                  {/* Developer mini form */}
+                  {!showDevForm ? (
+                    <button type="button" onClick={() => { setTempDevId(null); setTempDevName(''); setTempDevStartPrice(''); setTempDevInstallment(''); setTempDevDelivery(''); setTempDevBrochure(''); setTempDevNotes(''); setShowDevForm(true); }} className="btn btn-secondary" style={{ fontSize: '0.8rem', padding: '6px 12px' }}>
+                      + {language === 'ar' ? 'إضافة مطور وتفاصيله للمشروع' : 'Add Developer Detail'}
+                    </button>
+                  ) : (
+                    <div style={{ padding: '15px', border: '1px dashed var(--accent)', borderRadius: 'var(--radius-sm)', backgroundColor: 'rgba(255,255,255,0.02)', marginTop: '10px', display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '10px' }}>
+                      <div style={{ gridColumn: 'span 2' }}>
+                        <label style={{ fontSize: '0.75rem', color: 'var(--text-muted)' }}>{language === 'ar' ? 'اسم المطور العقاري *' : 'Developer Name *'}</label>
+                        <input type="text" className="form-control" value={tempDevName} onChange={e => setTempDevName(e.target.value)} placeholder="مثال: طلعت مصطفى، أوراسكوم..." required />
+                      </div>
+                      <div>
+                        <label style={{ fontSize: '0.75rem', color: 'var(--text-muted)' }}>{language === 'ar' ? 'يبدأ من سعر (جنيه)' : 'Starting Price (EGP)'}</label>
+                        <input type="text" className="form-control" value={tempDevStartPrice} onChange={e => setTempDevStartPrice(e.target.value)} />
+                      </div>
+                      <div>
+                        <label style={{ fontSize: '0.75rem', color: 'var(--text-muted)' }}>{language === 'ar' ? 'سنوات التقسيط' : 'Installment Years'}</label>
+                        <input type="text" className="form-control" value={tempDevInstallment} onChange={e => setTempDevInstallment(e.target.value)} />
+                      </div>
+                      <div>
+                        <label style={{ fontSize: '0.75rem', color: 'var(--text-muted)' }}>{language === 'ar' ? 'تاريخ الاستلام' : 'Delivery Date'}</label>
+                        <input type="text" className="form-control" value={tempDevDelivery} onChange={e => setTempDevDelivery(e.target.value)} />
+                      </div>
+                      <div>
+                        <label style={{ fontSize: '0.75rem', color: 'var(--text-muted)' }}>{language === 'ar' ? 'رابط البروشور' : 'Brochure URL'}</label>
+                        <input type="url" className="form-control" value={tempDevBrochure} onChange={e => setTempDevBrochure(e.target.value)} placeholder="https://..." />
+                      </div>
+                      <div style={{ gridColumn: 'span 2' }}>
+                        <label style={{ fontSize: '0.75rem', color: 'var(--text-muted)' }}>{language === 'ar' ? 'تفاصيل السداد والملاحظات' : 'Payment Plans & Notes'}</label>
+                        <textarea className="form-control" rows={2} value={tempDevNotes} onChange={e => setTempDevNotes(e.target.value)} />
+                      </div>
+                      <div style={{ gridColumn: 'span 2', display: 'flex', gap: '8px', justifyContent: 'flex-end', marginTop: '10px' }}>
+                        <button type="button" onClick={() => setShowDevForm(false)} className="btn btn-secondary" style={{ padding: '4px 10px', fontSize: '0.75rem' }}>{language === 'ar' ? 'إلغاء' : 'Cancel'}</button>
+                        <button type="button" onClick={handleAddTempDeveloper} className="btn btn-primary" style={{ padding: '4px 12px', fontSize: '0.75rem' }}>
+                          {tempDevId ? (language === 'ar' ? 'حفظ تعديل المطور' : 'Save Dev') : (language === 'ar' ? 'تأكيد إضافة المطور' : 'Confirm Add Dev')}
+                        </button>
+                      </div>
+                    </div>
+                  )}
                 </div>
-                <div>
-                  <label style={{ display: 'block', marginBottom: '5px', fontSize: '0.85rem', color: 'var(--text-muted)' }}>{language === 'ar' ? 'سنوات التقسيط' : 'Installment Years'}</label>
-                  <input type="text" className="form-control" value={projInstallmentYears} onChange={e => setProjInstallmentYears(e.target.value)} />
-                </div>
-                <div>
-                  <label style={{ display: 'block', marginBottom: '5px', fontSize: '0.85rem', color: 'var(--text-muted)' }}>{language === 'ar' ? 'تاريخ الاستلام' : 'Delivery Date'}</label>
-                  <input type="text" className="form-control" value={projDeliveryDate} onChange={e => setProjDeliveryDate(e.target.value)} />
-                </div>
-                <div style={{ gridColumn: 'span 2' }}>
-                  <label style={{ display: 'block', marginBottom: '5px', fontSize: '0.85rem', color: 'var(--text-muted)' }}>{language === 'ar' ? 'رابط ملف البروشور / دراسة الأسعار' : 'Brochure / Price Catalog URL'}</label>
-                  <input type="url" className="form-control" value={projBrochureUrl} onChange={e => setProjBrochureUrl(e.target.value)} placeholder="https://..." style={{ direction: 'ltr' }} />
-                </div>
-                <div style={{ gridColumn: 'span 2' }}>
-                  <label style={{ display: 'block', marginBottom: '5px', fontSize: '0.85rem', color: 'var(--text-muted)' }}>{language === 'ar' ? 'ملاحظات وتفاصيل الاستثمار' : 'Investment Notes & Details'}</label>
-                  <textarea className="form-control" rows={3} value={projNotes} onChange={e => setProjNotes(e.target.value)} style={{ resize: 'vertical' }} />
-                </div>
-                
+
                 <div style={{ gridColumn: 'span 2', display: 'flex', gap: '10px', justifyContent: 'flex-end', marginTop: '10px' }}>
                   <button type="button" onClick={() => { setShowProjectEditor(false); setEditingProject(null); }} className="btn btn-secondary">{language === 'ar' ? 'إلغاء' : 'Cancel'}</button>
                   <button type="submit" className="btn btn-primary">{editingProject ? (language === 'ar' ? 'تحديث المشروع' : 'Update Project') : (language === 'ar' ? 'إضافة المشروع' : 'Add Project')}</button>
@@ -967,49 +1043,61 @@ export const BrokerDashboard: React.FC = () => {
               <p>{language === 'ar' ? 'لا توجد مشاريع مرجعية مسجلة حالياً. اضغط على إضافة مشروع جديد بالأعلى.' : 'No reference projects found.'}</p>
             </div>
           ) : (
-            <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(320px, 1fr))', gap: '20px' }}>
+            <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(350px, 1fr))', gap: '20px' }}>
               {projects.filter(p => {
                 const query = projSearchQuery.toLowerCase();
                 return p.title.toLowerCase().includes(query) || 
-                  p.developer.toLowerCase().includes(query) || 
                   p.location.toLowerCase().includes(query);
               }).map(proj => (
-                <div key={proj.id} className="glass-panel" style={{ padding: '20px', display: 'flex', flexDirection: 'column', justifyContent: 'space-between', borderTop: '4px solid var(--accent)' }}>
+                <div key={proj.id} className="glass-panel" style={{ padding: '20px', display: 'flex', flexDirection: 'column', justifyContent: 'space-between', borderTop: '4px solid var(--accent)', backgroundColor: 'white' }}>
                   <div>
-                    <h4 style={{ fontSize: '1.1rem', marginBottom: '10px', color: 'white', fontWeight: 'bold' }}>{proj.title}</h4>
-                    <p style={{ color: 'var(--accent)', fontSize: '0.85rem', marginBottom: '15px', fontWeight: 'bold' }}>
-                      🏢 {proj.developer || (language === 'ar' ? 'مطور غير محدد' : 'Unknown Developer')}
-                    </p>
-                    
-                    <div style={{ display: 'flex', flexDirection: 'column', gap: '8px', fontSize: '0.85rem', color: 'var(--text-muted)', marginBottom: '15px' }}>
-                      <div>📍 <strong>{language === 'ar' ? 'الموقع:' : 'Location:'}</strong> {proj.location || '—'}</div>
-                      <div>💰 <strong>{language === 'ar' ? 'يبدأ من:' : 'Starting Price:'}</strong> {proj.startPrice ? `${Number(proj.startPrice).toLocaleString('ar-EG')} جنيه` : '—'}</div>
-                      <div>⏳ <strong>{language === 'ar' ? 'مدة التقسيط:' : 'Installment:'}</strong> {proj.installmentYears ? `${proj.installmentYears} سنوات` : '—'}</div>
-                      <div>📅 <strong>{language === 'ar' ? 'الاستلام:' : 'Delivery:'}</strong> {proj.deliveryDate || '—'}</div>
+                    <h4 style={{ fontSize: '1.25rem', marginBottom: '8px', color: 'var(--primary)', fontWeight: 800 }}>{proj.title}</h4>
+                    <div style={{ fontSize: '0.85rem', color: 'var(--text-muted)', marginBottom: '15px' }}>
+                      📍 <strong>{language === 'ar' ? 'الموقع العام:' : 'General Location:'}</strong> {proj.location || '—'}
                     </div>
-                    
-                    {proj.notes && (
-                      <p style={{ fontSize: '0.8rem', color: 'var(--text-main)', backgroundColor: 'rgba(255,255,255,0.05)', padding: '10px', borderRadius: 'var(--radius-sm)', lineHeight: 1.4, marginBottom: '15px' }}>
-                        💡 {proj.notes}
-                      </p>
-                    )}
+
+                    <div style={{ marginTop: '15px' }}>
+                      <strong style={{ fontSize: '0.9rem', color: 'var(--primary)', display: 'block', marginBottom: '10px', borderBottom: '1px solid rgba(0,0,0,0.1)', paddingBottom: '5px', fontWeight: 'bold' }}>
+                        {language === 'ar' ? 'المطورون العقاريون داخل المشروع:' : 'Developers within Project:'}
+                      </strong>
+                      {(!proj.developers || proj.developers.length === 0) ? (
+                        <span style={{ fontSize: '0.8rem', color: 'var(--text-muted)' }}>{language === 'ar' ? 'لم يتم إضافة مطورين بعد' : 'No developers added.'}</span>
+                      ) : (
+                        <div style={{ display: 'flex', flexDirection: 'column', gap: '12px' }}>
+                          {proj.developers.map((dev: any) => (
+                            <div key={dev.id} style={{ padding: '10px', backgroundColor: 'rgba(30,65,100,0.03)', borderRadius: 'var(--radius-sm)', borderRight: '4px solid var(--accent)', color: 'var(--primary)' }}>
+                              <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '6px' }}>
+                                <strong style={{ color: 'var(--primary)', fontSize: '0.9rem', fontWeight: 'bold' }}>🏢 {dev.name}</strong>
+                                {dev.brochureUrl && (
+                                  <a href={dev.brochureUrl} target="_blank" rel="noopener noreferrer" style={{ fontSize: '0.75rem', color: 'var(--accent)', textDecoration: 'underline', fontWeight: 'bold' }}>
+                                    {language === 'ar' ? 'فتح البروشور' : 'Brochure'}
+                                  </a>
+                                )}
+                              </div>
+                              <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '6px', fontSize: '0.8rem', color: '#555' }}>
+                                <div>💰 {dev.startPrice ? `${Number(dev.startPrice).toLocaleString('ar-EG')} ج` : '—'}</div>
+                                <div>⏳ {dev.installmentYears ? `${dev.installmentYears} سنوات` : '—'}</div>
+                                <div style={{ gridColumn: 'span 2' }}>📅 {language === 'ar' ? 'الاستلام:' : 'Delivery:'} {dev.deliveryDate || '—'}</div>
+                              </div>
+                              {dev.notes && (
+                                <div style={{ marginTop: '5px', fontSize: '0.75rem', color: '#444', borderTop: '1px dashed rgba(0,0,0,0.08)', paddingTop: '4px', lineHeight: 1.4 }}>
+                                  💡 {dev.notes}
+                                </div>
+                              )}
+                            </div>
+                          ))}
+                        </div>
+                      )}
+                    </div>
                   </div>
                   
-                  <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginTop: '15px', paddingTop: '15px', borderTop: '1px solid rgba(255,255,255,0.1)' }}>
-                    {proj.brochureUrl ? (
-                      <a href={proj.brochureUrl} target="_blank" rel="noopener noreferrer" className="btn btn-secondary" style={{ padding: '5px 12px', fontSize: '0.75rem', display: 'flex', alignItems: 'center', gap: '6px', color: 'var(--accent)', borderColor: 'var(--accent)' }}>
-                        <Link size={12} /> {language === 'ar' ? 'فتح البروشور' : 'Brochure'}
-                      </a>
-                    ) : <span />}
-
-                    <div style={{ display: 'flex', gap: '8px' }}>
-                      <button onClick={() => handleEditProject(proj)} className="btn btn-secondary" style={{ padding: '5px 10px', fontSize: '0.75rem' }}>
-                        {language === 'ar' ? 'تعديل' : 'Edit'}
-                      </button>
-                      <button onClick={() => handleDeleteProject(proj.id)} className="btn" style={{ padding: '5px 10px', fontSize: '0.75rem', backgroundColor: 'rgba(239, 68, 68, 0.15)', color: '#ef4444', border: 'none' }}>
-                        {language === 'ar' ? 'حذف' : 'Delete'}
-                      </button>
-                    </div>
+                  <div style={{ display: 'flex', justifyContent: 'flex-end', gap: '8px', marginTop: '20px', paddingTop: '15px', borderTop: '1px solid rgba(0,0,0,0.08)' }}>
+                    <button onClick={() => handleEditProject(proj)} className="btn btn-secondary" style={{ padding: '5px 12px', fontSize: '0.75rem', color: 'var(--primary)', borderColor: '#ccc' }}>
+                      {language === 'ar' ? 'تعديل' : 'Edit'}
+                    </button>
+                    <button onClick={() => handleDeleteProject(proj.id)} className="btn" style={{ padding: '5px 12px', fontSize: '0.75rem', backgroundColor: 'rgba(239, 68, 68, 0.15)', color: '#ef4444', border: 'none' }}>
+                      {language === 'ar' ? 'حذف' : 'Delete'}
+                    </button>
                   </div>
                 </div>
               ))}
