@@ -339,7 +339,7 @@ export const ClientMarketplace: React.FC<{ onNavigateToAuth: () => void; onNavig
         clearInterval(interval);
         try {
           (window as any).google.accounts.id.initialize({
-            client_id: "1098670559982-f8oheflr5955k53g3aobnptk6b88epd2.apps.googleusercontent.com",
+            client_id: "1095228004373-up76829dorkc4ptealn5hu730jd7bbi3.apps.googleusercontent.com",
             callback: (response: any) => {
               const payload = parseJwt(response.credential);
               if (payload) {
