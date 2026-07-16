@@ -983,4 +983,35 @@ router.delete('/crm/dev-profiles/:id', authenticateToken, requireRole(['broker']
   return res.status(404).json({ message: 'المطور غير موجود.' });
 });
 
+router.post('/upload', authenticateToken, async (req: any, res) => {
+  const { image } = req.body;
+  if (!image) {
+    return res.status(400).json({ message: 'لم يتم إرسال أي صورة.' });
+  }
+
+  try {
+    const matches = image.match(/^data:([A-Za-z-+\/]+);base64,(.+)$/);
+    if (!matches || matches.length !== 3) {
+      return res.status(400).json({ message: 'تنسيق الصورة غير صحيح.' });
+    }
+
+    const imageBuffer = Buffer.from(matches[2], 'base64');
+    const extension = matches[1].split('/')[1] || 'png';
+    const filename = `img_${Date.now()}_${Math.random().toString(36).substr(2, 9)}.${extension}`;
+    const uploadsDir = path.join(__dirname, '../../uploads');
+
+    if (!fs.existsSync(uploadsDir)) {
+      fs.mkdirSync(uploadsDir, { recursive: true });
+    }
+
+    const filepath = path.join(uploadsDir, filename);
+    fs.writeFileSync(filepath, imageBuffer);
+
+    return res.json({ url: `/uploads/${filename}` });
+  } catch (error) {
+    console.error('File upload error:', error);
+    return res.status(500).json({ message: 'حدث خطأ أثناء رفع الصورة.' });
+  }
+});
+
 export default router;

@@ -239,6 +239,33 @@ export const BrokerDashboard: React.FC = () => {
     setShowProjectEditor(true);
   };
 
+  const handleProjImageUpload = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (!file) return;
+
+    const reader = new FileReader();
+    reader.onloadend = async () => {
+      const base64Image = reader.result as string;
+      try {
+        const response = await fetch('/api/upload', {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+            'Authorization': `Bearer ${token}`
+          },
+          body: JSON.stringify({ image: base64Image })
+        });
+        if (response.ok) {
+          const data = await response.json();
+          setProjImgUrl(data.url);
+        }
+      } catch (err) {
+        console.error('Image upload failed:', err);
+      }
+    };
+    reader.readAsDataURL(file);
+  };
+
   const handleDeleteProject = async (projId: string) => {
     if (!window.confirm(language === 'ar' ? 'هل أنت متأكد من رغبتك في حذف هذا المشروع تماماً؟' : 'Are you sure you want to delete this project?')) return;
     try {
@@ -905,8 +932,27 @@ export const BrokerDashboard: React.FC = () => {
                   <input type="text" className="form-control" value={projLocation} onChange={e => setProjLocation(e.target.value)} placeholder={language === 'ar' ? 'مثال: التجمع الخامس، العاصمة الإدارية...' : 'e.g. New Cairo, New Capital...'} />
                 </div>
                 <div style={{ gridColumn: 'span 2' }}>
-                  <label style={{ display: 'block', marginBottom: '5px', fontSize: '0.85rem', color: 'var(--text-muted)' }}>{language === 'ar' ? 'رابط صورة المشروع' : 'Project Image URL'}</label>
-                  <input type="url" className="form-control" value={projImgUrl} onChange={e => setProjImgUrl(e.target.value)} placeholder="https://..." />
+                  <label style={{ display: 'block', marginBottom: '5px', fontSize: '0.85rem', color: 'var(--text-muted)' }}>{language === 'ar' ? 'صورة المشروع (رفع من الجهاز)' : 'Project Image (Upload from device)'}</label>
+                  <input 
+                    type="file" 
+                    accept="image/*" 
+                    className="form-control" 
+                    onChange={handleProjImageUpload} 
+                    style={{ display: 'block', width: '100%', padding: '8px' }} 
+                  />
+                  {projImgUrl && (
+                    <div style={{ marginTop: '10px', display: 'flex', alignItems: 'center', gap: '10px' }}>
+                      <img src={projImgUrl} alt="Preview" style={{ width: '80px', height: '60px', objectFit: 'cover', borderRadius: '4px', border: '1px solid var(--accent)' }} />
+                      <button 
+                        type="button" 
+                        onClick={() => setProjImgUrl('')} 
+                        className="btn" 
+                        style={{ padding: '4px 10px', fontSize: '0.75rem', backgroundColor: 'rgba(239, 68, 68, 0.15)', color: '#ef4444', border: 'none', borderRadius: '4px' }}
+                      >
+                        {language === 'ar' ? 'إزالة الصورة' : 'Remove Image'}
+                      </button>
+                    </div>
+                  )}
                 </div>
                 <div style={{ gridColumn: 'span 2' }}>
                   <label style={{ display: 'block', marginBottom: '5px', fontSize: '0.85rem', color: 'var(--text-muted)' }}>{language === 'ar' ? 'توصيف وتفاصيل المشروع' : 'Project Description & Details'}</label>
