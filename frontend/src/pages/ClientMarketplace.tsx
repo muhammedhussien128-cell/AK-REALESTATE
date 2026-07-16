@@ -330,38 +330,38 @@ export const ClientMarketplace: React.FC<{ onNavigateToAuth: () => void; onNavig
     }
   };
 
-  // Dynamically load Google GSI script
+  // Initialize and render Google sign-in button with polling safety
   useEffect(() => {
-    const script = document.createElement('script');
-    script.src = 'https://accounts.google.com/gsi/client';
-    script.async = true;
-    script.defer = true;
-    document.body.appendChild(script);
-    return () => {
-      document.body.removeChild(script);
-    };
-  }, []);
-
-  // Initialize and render Google sign-in button
-  useEffect(() => {
-    if (showWelcomeGate && (window as any).google) {
-      try {
-        (window as any).google.accounts.id.initialize({
-          client_id: "1098670559982-f8oheflr5955k53g3aobnptk6b88epd2.apps.googleusercontent.com",
-          callback: (response: any) => {
-            const payload = parseJwt(response.credential);
-            if (payload) {
-              setGateName(payload.name || '');
-              setGateEmail(payload.email || '');
+    if (!showWelcomeGate) return;
+    
+    const interval = setInterval(() => {
+      if ((window as any).google) {
+        clearInterval(interval);
+        try {
+          (window as any).google.accounts.id.initialize({
+            client_id: "1098670559982-f8oheflr5955k53g3aobnptk6b88epd2.apps.googleusercontent.com",
+            callback: (response: any) => {
+              const payload = parseJwt(response.credential);
+              if (payload) {
+                setGateName(payload.name || '');
+                setGateEmail(payload.email || '');
+              }
             }
+          });
+          const container = document.getElementById("google-login-button-div");
+          if (container) {
+            (window as any).google.accounts.id.renderButton(
+              container,
+              { theme: "filled_blue", size: "large", width: 380 }
+            );
           }
-        });
-        (window as any).google.accounts.id.renderButton(
-          document.getElementById("google-login-button-div"),
-          { theme: "filled_blue", size: "large", width: 380 }
-        );
-      } catch (err) {}
-    }
+        } catch (err) {
+          console.error("Google button render error:", err);
+        }
+      }
+    }, 100);
+
+    return () => clearInterval(interval);
   }, [showWelcomeGate]);
 
   // Google One-Tap Silent submission logic
