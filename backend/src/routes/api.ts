@@ -26,7 +26,11 @@ let memoryListings: any[] = [];
 let memoryClients: any[] = [];
 let memoryInitialized = false;
 
-const initMemory = () => {
+const BUCKET_ID = "ak_realestate_db_2026_v2";
+const KV_URL = `https://kvdb.io/${BUCKET_ID}`;
+
+// Initialize memory once from disk fallback, then KV
+const initMemory = async () => {
   if (memoryInitialized) return;
   try {
     if (fs.existsSync(leadsFilePath)) {
@@ -43,72 +47,131 @@ const initMemory = () => {
       memoryClients = JSON.parse(fs.readFileSync(clientsFilePath, 'utf-8'));
     }
   } catch (e) {}
+
+  try {
+    const leadsRes = await fetch(`${KV_URL}/leads`);
+    if (leadsRes.ok) {
+      const kvLeads = await leadsRes.json();
+      if (Array.isArray(kvLeads) && kvLeads.length > 0) memoryLeads = kvLeads;
+    }
+  } catch (e) {}
+  try {
+    const clientsRes = await fetch(`${KV_URL}/clients`);
+    if (clientsRes.ok) {
+      const kvClients = await clientsRes.json();
+      if (Array.isArray(kvClients) && kvClients.length > 0) memoryClients = kvClients;
+    }
+  } catch (e) {}
+  try {
+    const listingsRes = await fetch(`${KV_URL}/listings`);
+    if (listingsRes.ok) {
+      const kvListings = await listingsRes.json();
+      if (Array.isArray(kvListings) && kvListings.length > 0) memoryListings = kvListings;
+    }
+  } catch (e) {}
+
   memoryInitialized = true;
 };
 
 // Helper to load leads
-const loadLeads = (): any[] => {
-  initMemory();
+const loadLeads = async (): Promise<any[]> => {
+  await initMemory();
+  try {
+    const res = await fetch(`${KV_URL}/leads`);
+    if (res.ok) {
+      const kvLeads = await res.json();
+      if (Array.isArray(kvLeads)) memoryLeads = kvLeads;
+    }
+  } catch (e) {}
   return memoryLeads;
 };
 
 // Helper to save leads list
-const saveLeadsList = (leads: any[]) => {
-  initMemory();
+const saveLeadsList = async (leads: any[]) => {
+  await initMemory();
   memoryLeads = leads;
   try {
+    await fetch(`${KV_URL}/leads`, {
+      method: 'POST',
+      body: JSON.stringify(leads),
+      headers: { 'Content-Type': 'application/json' }
+    });
+  } catch (e) {}
+  try {
     fs.writeFileSync(leadsFilePath, JSON.stringify(leads, null, 2), 'utf-8');
-  } catch (e) {
-    console.warn('File system is read-only, saved in memory');
-  }
+  } catch (e) {}
 };
 
 // Helper to save single lead
-const saveLead = (newLead: any) => {
-  const leads = loadLeads();
+const saveLead = async (newLead: any) => {
+  const leads = await loadLeads();
   leads.unshift(newLead);
-  saveLeadsList(leads);
+  await saveLeadsList(leads);
 };
 
 // Helper to load listings
-const loadListings = (): any[] => {
-  initMemory();
+const loadListings = async (): Promise<any[]> => {
+  await initMemory();
+  try {
+    const res = await fetch(`${KV_URL}/listings`);
+    if (res.ok) {
+      const kvListings = await res.json();
+      if (Array.isArray(kvListings)) memoryListings = kvListings;
+    }
+  } catch (e) {}
   return memoryListings;
 };
 
 // Helper to save listings list
-const saveListingsList = (listings: any[]) => {
-  initMemory();
+const saveListingsList = async (listings: any[]) => {
+  await initMemory();
   memoryListings = listings;
   try {
+    await fetch(`${KV_URL}/listings`, {
+      method: 'POST',
+      body: JSON.stringify(listings),
+      headers: { 'Content-Type': 'application/json' }
+    });
+  } catch (e) {}
+  try {
     fs.writeFileSync(listingsFilePath, JSON.stringify(listings, null, 2), 'utf-8');
-  } catch (e) {
-    console.warn('File system is read-only, saved in memory');
-  }
+  } catch (e) {}
 };
 
 // Helper to load clients
-const loadClients = (): any[] => {
-  initMemory();
+const loadClients = async (): Promise<any[]> => {
+  await initMemory();
+  try {
+    const res = await fetch(`${KV_URL}/clients`);
+    if (res.ok) {
+      const kvClients = await res.json();
+      if (Array.isArray(kvClients)) memoryClients = kvClients;
+    }
+  } catch (e) {}
   return memoryClients;
 };
 
 // Helper to save clients list
-const saveClientsList = (clients: any[]) => {
-  initMemory();
+const saveClientsList = async (clients: any[]) => {
+  await initMemory();
   memoryClients = clients;
   try {
+    await fetch(`${KV_URL}/clients`, {
+      method: 'POST',
+      body: JSON.stringify(clients),
+      headers: { 'Content-Type': 'application/json' }
+    });
+  } catch (e) {}
+  try {
     fs.writeFileSync(clientsFilePath, JSON.stringify(clients, null, 2), 'utf-8');
-  } catch (e) {
-    console.warn('File system is read-only, saved in memory');
-  }
+  } catch (e) {}
 };
 
 // Helper to save single client
-const saveClient = (newClient: any) => {
-  const clients = loadClients();
+const saveClient = async (newClient: any) => {
+  const clients = await loadClients();
   clients.unshift(newClient);
-  saveClientsList(clients);
+  await saveClientsList(clients);
 };
 
 // Auth Routes
@@ -116,7 +179,7 @@ router.post('/auth/register', register);
 router.post('/auth/login', login);
 
 // Dual Welcome Gate Login/Register Endpoint
-router.post('/auth/welcome-gate-auth', (req: any, res) => {
+router.post('/auth/welcome-gate-auth', async (req: any, res) => {
   const { name, email, phone, lead_source } = req.body;
   const tenantId = req.headers['x-tenant-id'] || 'tenant-nawy-uuid-1111';
 
@@ -164,7 +227,7 @@ router.post('/auth/welcome-gate-auth', (req: any, res) => {
 
     tempUserStore.push(newUser);
 
-    saveClient({
+    await saveClient({
       id: newUser.id,
       tenant_id: tenantId,
       broker_id: 'b1111111-1111-1111-1111-111111111111', 
@@ -194,7 +257,7 @@ router.post('/auth/welcome-gate-auth', (req: any, res) => {
       last_active: new Date().toLocaleTimeString('ar-EG'),
       created_at: new Date().toISOString()
     };
-    saveLead(newLead);
+    await saveLead(newLead);
 
     const token = jwt.sign(
       { id: newUser.id, tenant_id: newUser.tenant_id, email: newUser.email, phone: newUser.phone, role: newUser.role },
@@ -265,9 +328,9 @@ router.post('/auth/register-visitor', (req: any, res) => {
 });
 
 // Visitor Activity Tracking Link
-router.post('/crm/visitor-activity', (req: any, res) => {
+router.post('/crm/visitor-activity', async (req: any, res) => {
   const { leadEmail, leadPhone, listingTitle, timeOnSite, chatHistory } = req.body;
-  const leads = loadLeads();
+  const leads = await loadLeads();
 
   const targetLeads: any[] = [];
   if (leadPhone) {
@@ -304,7 +367,7 @@ router.post('/crm/visitor-activity', (req: any, res) => {
         if (!targetLead.viewed_history) {
           targetLead.viewed_history = [];
         }
-        const listings = loadListings();
+        const listings = await loadListings();
         const targetListing = listings.find(l => l.title === listingTitle);
         const priceVal = targetListing ? targetListing.price : 4500000; 
 
@@ -318,7 +381,7 @@ router.post('/crm/visitor-activity', (req: any, res) => {
         }
       }
     });
-    saveLeadsList(leads);
+    await saveLeadsList(leads);
     return res.json({ success: true, count: targetLeads.length });
   }
 
@@ -362,7 +425,7 @@ router.post('/auth/register-broker', authenticateToken, requireRole(['broker']),
 });
 
 // Update Profile settings endpoint & sync MOCK_TENANTS phone
-router.put('/auth/profile', authenticateToken, (req: any, res) => {
+router.put('/auth/profile', authenticateToken, async (req: any, res) => {
   const { name, email, phone } = req.body;
   const user = tempUserStore.find(u => u.id === req.user.id);
   
@@ -379,13 +442,13 @@ router.put('/auth/profile', authenticateToken, (req: any, res) => {
 
     if (user.id.startsWith('u_vis_')) {
       const visitorId = user.id.replace('u_vis_', '');
-      const leads = loadLeads();
+      const leads = await loadLeads();
       const targetLead = leads.find(l => l.id === 'l_vis_' + visitorId);
       if (targetLead) {
         targetLead.client_name = user.name;
         targetLead.phone = user.phone;
         targetLead.notes = `${targetLead.notes || ''} | تم تحديث البيانات الحقيقية من Google One-Tap (${user.email})`;
-        fs.writeFileSync(leadsFilePath, JSON.stringify(leads, null, 2), 'utf-8');
+        await saveLeadsList(leads);
       }
     }
     
@@ -429,27 +492,27 @@ router.get('/crm/clients', authenticateToken, requireRole(['broker']), (req: any
 });
 
 // CRM Route for Broker - Bookings Leads List
-router.get('/crm/leads', authenticateToken, requireRole(['broker']), (req: any, res) => {
-  const leads = loadLeads().filter((l: any) => l.tenant_id === req.tenantId && l.broker_id === req.user.id);
+router.get('/crm/leads', authenticateToken, requireRole(['broker']), async (req: any, res) => {
+  const leads = (await loadLeads()).filter((l: any) => l.tenant_id === req.tenantId && l.broker_id === req.user.id);
   return res.json(leads);
 });
 
 // Update Lead Status (Handles qualification and archiving too)
-router.put('/crm/leads/:id', authenticateToken, requireRole(['broker']), (req: any, res) => {
+router.put('/crm/leads/:id', authenticateToken, requireRole(['broker']), async (req: any, res) => {
   const { id } = req.params;
   const { status, qualification, archived } = req.body;
-  const leads = loadLeads();
+  const leads = await loadLeads();
   const index = leads.findIndex((l: any) => l.tenant_id === req.tenantId && l.id === id && l.broker_id === req.user.id);
   if (index !== -1) {
     if (status !== undefined) leads[index].status = status;
     if (qualification !== undefined) leads[index].qualification = qualification;
     if (archived !== undefined) leads[index].archived = archived;
     
-    saveLeadsList(leads);
+    await saveLeadsList(leads);
 
     // Auto trigger actions when lead is marked as Sold
     if (status === 'Sold') {
-      const clients = loadClients();
+      const clients = await loadClients();
       const exists = clients.some(c => c.tenant_id === req.tenantId && c.phone === leads[index].phone && c.broker_id === req.user.id);
       if (!exists) {
         clients.unshift({
@@ -461,10 +524,10 @@ router.put('/crm/leads/:id', authenticateToken, requireRole(['broker']), (req: a
           phone: leads[index].phone,
           created_at: new Date().toISOString()
         });
-        saveClientsList(clients);
+        await saveClientsList(clients);
       }
 
-      const listings = loadListings();
+      const listings = await loadListings();
       const listingIndex = listings.findIndex(l => l.tenant_id === req.tenantId && l.title === leads[index].listing_title);
       if (listingIndex !== -1) {
         const currentCount = Number(listings[listingIndex].unit_count || 1);
@@ -474,7 +537,7 @@ router.put('/crm/leads/:id', authenticateToken, requireRole(['broker']), (req: a
           listings[listingIndex].unit_count = 0;
           listings[listingIndex].status = 'sold';
         }
-        saveListingsList(listings);
+        await saveListingsList(listings);
       }
     }
 
@@ -484,29 +547,28 @@ router.put('/crm/leads/:id', authenticateToken, requireRole(['broker']), (req: a
 });
 
 // Delete Lead CRM route
-router.delete('/crm/leads/:id', authenticateToken, requireRole(['broker']), (req: any, res) => {
+router.delete('/crm/leads/:id', authenticateToken, requireRole(['broker']), async (req: any, res) => {
   const { id } = req.params;
-  const leads = loadLeads();
+  const leads = await loadLeads();
   const index = leads.findIndex((l: any) => l.tenant_id === req.tenantId && l.id === id && (!l.broker_id || l.broker_id === req.user.id));
   
   if (index !== -1) {
     leads.splice(index, 1);
-    saveLeadsList(leads);
+    await saveLeadsList(leads);
     return res.json({ success: true });
   }
-  const debugLeads = leads.map((l: any) => `[id:${l.id},tenant:${l.tenant_id},broker:${l.broker_id}]`).slice(0, 5).join(', ');
-  return res.status(404).json({ message: `الطلب غير موجود. ID:${id}, Tenant:${req.tenantId}, User:${req.user?.id}. Available: ${debugLeads}` });
+  return res.status(404).json({ message: 'الطلب غير موجود.' });
 });
 
 // Client action: Submit booking visit
-router.post('/crm/leads', authenticateToken, (req: any, res) => {
+router.post('/crm/leads', authenticateToken, async (req: any, res) => {
   const { listing_title, preferred_date, preferred_time, notes, client_name, phone, lead_source } = req.body;
 
   if (!listing_title || !client_name || !phone) {
     return res.status(400).json({ message: 'يرجى ملء الاسم ورقم الهاتف لتقديم طلب المعاينة.' });
   }
 
-  const listings = loadListings();
+  const listings = await loadListings();
   const targetListing = listings.find(l => l.title === listing_title);
   const assignedBrokerId = targetListing ? targetListing.broker_id : 'b1111111-1111-1111-1111-111111111111';
 
@@ -533,7 +595,7 @@ router.post('/crm/leads', authenticateToken, (req: any, res) => {
     created_at: new Date().toISOString()
   };
 
-  saveLead(newLead);
+  await saveLead(newLead);
   return res.status(201).json(newLead);
 });
 
@@ -545,7 +607,7 @@ router.post('/chat', async (req: any, res) => {
   }
 
   // Load latest listings database as context
-  const listings = loadListings().filter(l => l.status === 'available');
+  const listings = (await loadListings()).filter(l => l.status === 'available');
   const listingsContext = listings.map(l => ({
     title: l.title,
     description: l.description,
@@ -682,7 +744,7 @@ Never invent properties, prices, or details.
 
   // Post lead chat transcript update in background if email or phone is supplied
   if (userPhone || userEmail) {
-    const leads = loadLeads();
+    const leads = await loadLeads();
     const targetLeads: any[] = [];
     if (userPhone) {
       leads.forEach((l: any) => {
@@ -704,7 +766,7 @@ Never invent properties, prices, or details.
         targetLead.chat_history.push(`العميل: ${lastUserMsg}`);
         targetLead.chat_history.push(`المساعد: ${reply}`);
       });
-      saveLeadsList(leads);
+      await saveLeadsList(leads);
     }
   }
 
