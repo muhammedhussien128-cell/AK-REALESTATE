@@ -179,8 +179,8 @@ function AppContent() {
         style={{
           position: 'fixed',
           bottom: '25px',
-          left: language === 'ar' ? 'auto' : '100px',
-          right: language === 'ar' ? '100px' : 'auto',
+          left: language === 'ar' ? 'auto' : '20px',
+          right: language === 'ar' ? '20px' : 'auto',
           backgroundColor: '#25D366', 
           color: 'white',
           padding: '12px 24px',

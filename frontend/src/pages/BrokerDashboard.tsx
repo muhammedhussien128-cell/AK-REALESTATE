@@ -589,7 +589,7 @@ export const BrokerDashboard: React.FC = () => {
   return (
     <div style={{ padding: '20px 0' }}>
       {/* Header and Toggle Tabs */}
-      <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '30px', flexWrap: 'wrap', gap: '15px' }}>
+      <div className="subtabs-container" style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '30px', flexWrap: 'wrap', gap: '15px' }}>
         <div>
           <h2 style={{ fontSize: '1.8rem' }} className="gradient-text">
             {language === 'ar' ? 'لوحة تحكم إدارة المبيعات والوساطة' : 'Sales & Brokerage Command Panel'}
@@ -597,7 +597,7 @@ export const BrokerDashboard: React.FC = () => {
           <p style={{ color: 'var(--text-muted)' }}>{user?.name} | {tenant.name}</p>
         </div>
 
-        <div style={{ display: 'flex', gap: '10px' }}>
+        <div style={{ display: 'flex', gap: '10px', flexWrap: 'wrap' }}>
           <button 
             onClick={() => setDashboardSubTab('analytics')} 
             className={`btn ${dashboardSubTab === 'analytics' ? 'btn-primary' : 'btn-secondary'}`}
@@ -850,7 +850,7 @@ export const BrokerDashboard: React.FC = () => {
                       )}
                     </div>
 
-                    <div style={{ display: 'flex', alignItems: 'center', gap: '15px' }} onClick={e => e.stopPropagation()}>
+                    <div className="lead-card-right-section" style={{ display: 'flex', alignItems: 'center', gap: '15px', flexWrap: 'wrap' }} onClick={e => e.stopPropagation()}>
                       <div style={{ textAlign: 'left', fontSize: '0.85rem' }}>
                         <div>📅 {lead.preferred_date}</div>
                         <div>⏰ {lead.preferred_time}</div>

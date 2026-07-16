@@ -177,3 +177,53 @@ body {
 @keyframes spin {
   to { transform: rotate(360deg); }
 }
+
+/* Responsive adjustments for Mobile */
+@media (max-width: 768px) {
+  /* Navigation adjustments */
+  nav.glass-panel {
+    padding: 10px 15px !important;
+    gap: 10px !important;
+  }
+  
+  nav.glass-panel > div {
+    width: 100% !important;
+    justify-content: center !important;
+    text-align: center !important;
+  }
+  
+  nav.glass-panel button, nav.glass-panel a {
+    width: 100% !important;
+    justify-content: center !important;
+  }
+
+  /* Subtabs toggle container */
+  .subtabs-container {
+    flex-direction: column !important;
+    width: 100% !important;
+    align-items: stretch !important;
+  }
+  .subtabs-container > div {
+    width: 100% !important;
+  }
+  .subtabs-container button {
+    width: 100% !important;
+    justify-content: center !important;
+  }
+
+  /* CRM lead card responsiveness */
+  .lead-card-right-section {
+    flex-direction: column !important;
+    align-items: stretch !important;
+    width: 100% !important;
+    border-top: 1px solid rgba(0,0,0,0.08) !important;
+    padding-top: 15px !important;
+    gap: 12px !important;
+  }
+  .lead-card-right-section select, .lead-card-right-section div {
+    width: 100% !important;
+  }
+  .lead-card-right-section select {
+    text-align-last: center;
+  }
+}
