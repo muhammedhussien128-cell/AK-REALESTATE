@@ -20,10 +20,12 @@ const JWT_SECRET = process.env.JWT_SECRET || 'semsar_secret_token_change_in_prod
 const leadsFilePath = path.join(__dirname, '../../leads.json');
 const listingsFilePath = path.join(__dirname, '../../listings.json');
 const clientsFilePath = path.join(__dirname, '../../clients.json');
+const projectsFilePath = path.join(__dirname, '../../projects.json');
 
 let memoryLeads: any[] = [];
 let memoryListings: any[] = [];
 let memoryClients: any[] = [];
+let memoryProjects: any[] = [];
 let memoryInitialized = false;
 
 const BUCKET_ID = "ak_realestate_db_2026_v2";
@@ -47,6 +49,11 @@ const initMemory = async () => {
       memoryClients = JSON.parse(fs.readFileSync(clientsFilePath, 'utf-8'));
     }
   } catch (e) {}
+  try {
+    if (fs.existsSync(projectsFilePath)) {
+      memoryProjects = JSON.parse(fs.readFileSync(projectsFilePath, 'utf-8'));
+    }
+  } catch (e) {}
 
   try {
     const leadsRes = await fetch(`${KV_URL}/leads`);
@@ -67,6 +74,13 @@ const initMemory = async () => {
     if (listingsRes.ok) {
       const kvListings = await listingsRes.json();
       if (Array.isArray(kvListings) && kvListings.length > 0) memoryListings = kvListings;
+    }
+  } catch (e) {}
+  try {
+    const projectsRes = await fetch(`${KV_URL}/projects`);
+    if (projectsRes.ok) {
+      const kvProjects = await projectsRes.json();
+      if (Array.isArray(kvProjects) && kvProjects.length > 0) memoryProjects = kvProjects;
     }
   } catch (e) {}
 
@@ -172,6 +186,35 @@ const saveClient = async (newClient: any) => {
   const clients = await loadClients();
   clients.unshift(newClient);
   await saveClientsList(clients);
+};
+
+// Helper to load projects
+const loadProjects = async (): Promise<any[]> => {
+  await initMemory();
+  try {
+    const res = await fetch(`${KV_URL}/projects`);
+    if (res.ok) {
+      const kvProjects = await res.json();
+      if (Array.isArray(kvProjects)) memoryProjects = kvProjects;
+    }
+  } catch (e) {}
+  return memoryProjects;
+};
+
+// Helper to save projects list
+const saveProjectsList = async (projects: any[]) => {
+  await initMemory();
+  memoryProjects = projects;
+  try {
+    await fetch(`${KV_URL}/projects`, {
+      method: 'POST',
+      body: JSON.stringify(projects),
+      headers: { 'Content-Type': 'application/json' }
+    });
+  } catch (e) {}
+  try {
+    fs.writeFileSync(projectsFilePath, JSON.stringify(projects, null, 2), 'utf-8');
+  } catch (e) {}
 };
 
 // Auth Routes
@@ -771,6 +814,76 @@ Never invent properties, prices, or details.
   }
 
   return res.json({ text: reply });
+});
+
+// Projects Reference API endpoints (for Brokers to read, write, update, delete projects)
+router.get('/crm/projects', authenticateToken, requireRole(['broker']), async (req: any, res) => {
+  const projects = await loadProjects();
+  const filtered = projects.filter((p: any) => p.tenant_id === req.tenantId && p.broker_id === req.user.id);
+  return res.json(filtered);
+});
+
+router.post('/crm/projects', authenticateToken, requireRole(['broker']), async (req: any, res) => {
+  const { title, developer, location, startPrice, installmentYears, deliveryDate, brochureUrl, notes } = req.body;
+  if (!title) {
+    return res.status(400).json({ message: 'يرجى إدخال اسم المشروع.' });
+  }
+
+  const projects = await loadProjects();
+  const newProject = {
+    id: 'proj_' + Math.random().toString(36).substr(2, 9),
+    tenant_id: req.tenantId,
+    broker_id: req.user.id,
+    title,
+    developer: developer || '',
+    location: location || '',
+    startPrice: startPrice || '',
+    installmentYears: installmentYears || '',
+    deliveryDate: deliveryDate || '',
+    brochureUrl: brochureUrl || '',
+    notes: notes || '',
+    created_at: new Date().toISOString()
+  };
+
+  projects.unshift(newProject);
+  await saveProjectsList(projects);
+  return res.status(201).json(newProject);
+});
+
+router.put('/crm/projects/:id', authenticateToken, requireRole(['broker']), async (req: any, res) => {
+  const { id } = req.params;
+  const { title, developer, location, startPrice, installmentYears, deliveryDate, brochureUrl, notes } = req.body;
+
+  const projects = await loadProjects();
+  const index = projects.findIndex((p: any) => p.tenant_id === req.tenantId && p.id === id && p.broker_id === req.user.id);
+
+  if (index !== -1) {
+    if (title !== undefined) projects[index].title = title;
+    if (developer !== undefined) projects[index].developer = developer;
+    if (location !== undefined) projects[index].location = location;
+    if (startPrice !== undefined) projects[index].startPrice = startPrice;
+    if (installmentYears !== undefined) projects[index].installmentYears = installmentYears;
+    if (deliveryDate !== undefined) projects[index].deliveryDate = deliveryDate;
+    if (brochureUrl !== undefined) projects[index].brochureUrl = brochureUrl;
+    if (notes !== undefined) projects[index].notes = notes;
+
+    await saveProjectsList(projects);
+    return res.json(projects[index]);
+  }
+  return res.status(404).json({ message: 'المشروع غير موجود.' });
+});
+
+router.delete('/crm/projects/:id', authenticateToken, requireRole(['broker']), async (req: any, res) => {
+  const { id } = req.params;
+  const projects = await loadProjects();
+  const index = projects.findIndex((p: any) => p.tenant_id === req.tenantId && p.id === id && p.broker_id === req.user.id);
+
+  if (index !== -1) {
+    projects.splice(index, 1);
+    await saveProjectsList(projects);
+    return res.json({ success: true });
+  }
+  return res.status(404).json({ message: 'المشروع غير موجود.' });
 });
 
 export default router;

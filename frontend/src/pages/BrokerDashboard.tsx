@@ -2,7 +2,7 @@ import React, { useState, useEffect } from 'react';
 import { useAuth } from '../context/AuthContext';
 import { useLanguage } from '../context/LanguageContext';
 import { useTenant } from '../context/TenantContext';
-import { Plus, Trash2, Edit, CheckCircle, Home, Image, Tag, ArrowRight, Bed, Bath, Maximize2, Sparkles, Users, User, Phone, Mail, Calendar, BarChart2, TrendingUp, Compass, Award, Link, Settings, ShieldAlert, Key, Copy, Check, Clock, Globe, ArrowUpRight, X, Search, Archive, MessageSquare } from 'lucide-react';
+import { Plus, Trash2, Edit, CheckCircle, Home, Image, Tag, ArrowRight, Bed, Bath, Maximize2, Sparkles, Users, User, Phone, Mail, Calendar, BarChart2, TrendingUp, Compass, Award, Link, Settings, ShieldAlert, Key, Copy, Check, Clock, Globe, ArrowUpRight, X, Search, Archive, MessageSquare, Layers } from 'lucide-react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { Listing } from './ClientMarketplace';
 import { GOVERNORATES, EGYPT_LOCATIONS } from '../utils/locations';
@@ -51,7 +51,37 @@ export const BrokerDashboard: React.FC = () => {
   const [crmClients, setCrmClients] = useState<CRMClient[]>([]);
   const [leads, setLeads] = useState<Lead[]>([]);
   
-  const [dashboardSubTab, setDashboardSubTab] = useState<'analytics' | 'listings' | 'crm' | 'settings'>('analytics');
+  const [dashboardSubTab, setDashboardSubTab] = useState<'analytics' | 'listings' | 'crm' | 'settings' | 'projects'>('analytics');
+  
+  // Projects Reference Module States
+  interface Project {
+    id: string;
+    tenant_id: string;
+    broker_id: string;
+    title: string;
+    developer: string;
+    location: string;
+    startPrice: string;
+    installmentYears: string;
+    deliveryDate: string;
+    brochureUrl: string;
+    notes: string;
+    created_at: string;
+  }
+  const [projects, setProjects] = useState<Project[]>([]);
+  const [showProjectEditor, setShowProjectEditor] = useState(false);
+  const [editingProject, setEditingProject] = useState<Project | null>(null);
+  const [projSearchQuery, setProjSearchQuery] = useState('');
+
+  const [projTitle, setProjTitle] = useState('');
+  const [projDeveloper, setProjDeveloper] = useState('');
+  const [projLocation, setProjLocation] = useState('');
+  const [projStartPrice, setProjStartPrice] = useState('');
+  const [projInstallmentYears, setProjInstallmentYears] = useState('');
+  const [projDeliveryDate, setProjDeliveryDate] = useState('');
+  const [projBrochureUrl, setProjBrochureUrl] = useState('');
+  const [projNotes, setProjNotes] = useState('');
+
   const [showEditor, setShowEditor] = useState(false);
   const [editingListing, setEditingListing] = useState<Listing | null>(null);
 
@@ -155,10 +185,100 @@ export const BrokerDashboard: React.FC = () => {
     } catch (e) {}
   };
 
+  const fetchProjects = async () => {
+    try {
+      const response = await fetch('/api/crm/projects', {
+        headers: { 
+          'Authorization': `Bearer ${token}`,
+          'X-Tenant-Subdomain': tenant.subdomain
+        }
+      });
+      if (response.ok) {
+        const data = await response.json();
+        setProjects(data);
+      }
+    } catch (err) {}
+  };
+
+  const handleProjectSubmit = async (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!projTitle) return;
+
+    const payload = {
+      title: projTitle,
+      developer: projDeveloper,
+      location: projLocation,
+      startPrice: projStartPrice,
+      installmentYears: projInstallmentYears,
+      deliveryDate: projDeliveryDate,
+      brochureUrl: projBrochureUrl,
+      notes: projNotes
+    };
+
+    try {
+      const url = editingProject ? `/api/crm/projects/${editingProject.id}` : '/api/crm/projects';
+      const method = editingProject ? 'PUT' : 'POST';
+      
+      const response = await fetch(url, {
+        method,
+        headers: {
+          'Content-Type': 'application/json',
+          'Authorization': `Bearer ${token}`,
+          'X-Tenant-Subdomain': tenant.subdomain
+        },
+        body: JSON.stringify(payload)
+      });
+
+      if (response.ok) {
+        fetchProjects();
+        setShowProjectEditor(false);
+        setEditingProject(null);
+        setProjTitle('');
+        setProjDeveloper('');
+        setProjLocation('');
+        setProjStartPrice('');
+        setProjInstallmentYears('');
+        setProjDeliveryDate('');
+        setProjBrochureUrl('');
+        setProjNotes('');
+      }
+    } catch (err) {}
+  };
+
+  const handleEditProject = (proj: Project) => {
+    setEditingProject(proj);
+    setProjTitle(proj.title);
+    setProjDeveloper(proj.developer);
+    setProjLocation(proj.location);
+    setProjStartPrice(proj.startPrice);
+    setProjInstallmentYears(proj.installmentYears);
+    setProjDeliveryDate(proj.deliveryDate);
+    setProjBrochureUrl(proj.brochureUrl);
+    setProjNotes(proj.notes);
+    setShowProjectEditor(true);
+  };
+
+  const handleDeleteProject = async (projId: string) => {
+    if (!window.confirm(language === 'ar' ? 'هل أنت متأكد من رغبتك في حذف هذا المشروع تماماً؟' : 'Are you sure you want to delete this project?')) return;
+    try {
+      const response = await fetch(`/api/crm/projects/${projId}`, {
+        method: 'DELETE',
+        headers: { 
+          'Authorization': `Bearer ${token}`,
+          'X-Tenant-Subdomain': tenant.subdomain
+        }
+      });
+      if (response.ok) {
+        fetchProjects();
+      }
+    } catch (err) {}
+  };
+
   useEffect(() => {
     fetchBrokerListings();
     fetchCRMLeads();
     fetchCRMUsers();
+    fetchProjects();
   }, [user, tenant]);
 
   const handleSaveSettings = async (e: React.FormEvent) => {
@@ -445,6 +565,13 @@ export const BrokerDashboard: React.FC = () => {
             className={`btn ${dashboardSubTab === 'listings' ? 'btn-primary' : 'btn-secondary'}`}
           >
             {t('myListings')}
+          </button>
+          <button 
+            onClick={() => setDashboardSubTab('projects')} 
+            className={`btn ${dashboardSubTab === 'projects' ? 'btn-primary' : 'btn-secondary'}`}
+            style={{ display: 'flex', alignItems: 'center', gap: '8px' }}
+          >
+            <Layers size={16} /> {language === 'ar' ? 'مرجع المشاريع' : 'Projects Reference'}
           </button>
           <button 
             onClick={() => {
@@ -747,6 +874,147 @@ export const BrokerDashboard: React.FC = () => {
               })}
             </div>
           </div>
+        </div>
+      ) : dashboardSubTab === 'projects' ? (
+        // PROJECTS REFERENCE TAB
+        <div>
+          <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '20px', flexWrap: 'wrap', gap: '15px' }}>
+            {/* Search project bar */}
+            <div style={{ position: 'relative', flex: '1', maxWidth: '400px' }}>
+              <Search size={16} style={{ position: 'absolute', right: '12px', top: '12px', color: 'var(--text-muted)' }} />
+              <input 
+                type="text" 
+                className="form-control" 
+                placeholder={language === 'ar' ? 'ابحث عن مشروع بالاسم أو المطور أو الموقع...' : 'Search projects...'}
+                value={projSearchQuery}
+                onChange={e => setProjSearchQuery(e.target.value)}
+                style={{ paddingRight: '38px', fontSize: '0.85rem' }}
+              />
+            </div>
+            
+            <button 
+              onClick={() => {
+                setEditingProject(null);
+                setProjTitle('');
+                setProjDeveloper('');
+                setProjLocation('');
+                setProjStartPrice('');
+                setProjInstallmentYears('');
+                setProjDeliveryDate('');
+                setProjBrochureUrl('');
+                setProjNotes('');
+                setShowProjectEditor(true);
+              }} 
+              className="btn btn-primary"
+            >
+              <Plus size={18} /> {language === 'ar' ? 'إضافة مشروع مرجعي' : 'Add Reference Project'}
+            </button>
+          </div>
+
+          {/* Modal / Inline Editor for Project */}
+          {showProjectEditor && (
+            <div className="glass-panel" style={{ padding: '25px', marginBottom: '30px', border: '2px solid var(--accent)' }}>
+              <h3 style={{ fontSize: '1.2rem', marginBottom: '20px' }}>
+                {editingProject ? (language === 'ar' ? 'تعديل المشروع المرجعي' : 'Edit Reference Project') : (language === 'ar' ? 'إضافة مشروع مرجعي جديد' : 'Add New Reference Project')}
+              </h3>
+              
+              <form onSubmit={handleProjectSubmit} style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(250px, 1fr))', gap: '15px' }}>
+                <div>
+                  <label style={{ display: 'block', marginBottom: '5px', fontSize: '0.85rem', color: 'var(--text-muted)' }}>{language === 'ar' ? 'اسم المشروع *' : 'Project Name *'}</label>
+                  <input type="text" className="form-control" value={projTitle} onChange={e => setProjTitle(e.target.value)} required />
+                </div>
+                <div>
+                  <label style={{ display: 'block', marginBottom: '5px', fontSize: '0.85rem', color: 'var(--text-muted)' }}>{language === 'ar' ? 'المطور العقاري' : 'Developer'}</label>
+                  <input type="text" className="form-control" value={projDeveloper} onChange={e => setProjDeveloper(e.target.value)} />
+                </div>
+                <div>
+                  <label style={{ display: 'block', marginBottom: '5px', fontSize: '0.85rem', color: 'var(--text-muted)' }}>{language === 'ar' ? 'الموقع بالتفصيل' : 'Location'}</label>
+                  <input type="text" className="form-control" value={projLocation} onChange={e => setProjLocation(e.target.value)} />
+                </div>
+                <div>
+                  <label style={{ display: 'block', marginBottom: '5px', fontSize: '0.85rem', color: 'var(--text-muted)' }}>{language === 'ar' ? 'السعر يبدأ من (جنيه)' : 'Starting Price (EGP)'}</label>
+                  <input type="text" className="form-control" value={projStartPrice} onChange={e => setProjStartPrice(e.target.value)} />
+                </div>
+                <div>
+                  <label style={{ display: 'block', marginBottom: '5px', fontSize: '0.85rem', color: 'var(--text-muted)' }}>{language === 'ar' ? 'سنوات التقسيط' : 'Installment Years'}</label>
+                  <input type="text" className="form-control" value={projInstallmentYears} onChange={e => setProjInstallmentYears(e.target.value)} />
+                </div>
+                <div>
+                  <label style={{ display: 'block', marginBottom: '5px', fontSize: '0.85rem', color: 'var(--text-muted)' }}>{language === 'ar' ? 'تاريخ الاستلام' : 'Delivery Date'}</label>
+                  <input type="text" className="form-control" value={projDeliveryDate} onChange={e => setProjDeliveryDate(e.target.value)} />
+                </div>
+                <div style={{ gridColumn: 'span 2' }}>
+                  <label style={{ display: 'block', marginBottom: '5px', fontSize: '0.85rem', color: 'var(--text-muted)' }}>{language === 'ar' ? 'رابط ملف البروشور / دراسة الأسعار' : 'Brochure / Price Catalog URL'}</label>
+                  <input type="url" className="form-control" value={projBrochureUrl} onChange={e => setProjBrochureUrl(e.target.value)} placeholder="https://..." style={{ direction: 'ltr' }} />
+                </div>
+                <div style={{ gridColumn: 'span 2' }}>
+                  <label style={{ display: 'block', marginBottom: '5px', fontSize: '0.85rem', color: 'var(--text-muted)' }}>{language === 'ar' ? 'ملاحظات وتفاصيل الاستثمار' : 'Investment Notes & Details'}</label>
+                  <textarea className="form-control" rows={3} value={projNotes} onChange={e => setProjNotes(e.target.value)} style={{ resize: 'vertical' }} />
+                </div>
+                
+                <div style={{ gridColumn: 'span 2', display: 'flex', gap: '10px', justifyContent: 'flex-end', marginTop: '10px' }}>
+                  <button type="button" onClick={() => { setShowProjectEditor(false); setEditingProject(null); }} className="btn btn-secondary">{language === 'ar' ? 'إلغاء' : 'Cancel'}</button>
+                  <button type="submit" className="btn btn-primary">{editingProject ? (language === 'ar' ? 'تحديث المشروع' : 'Update Project') : (language === 'ar' ? 'إضافة المشروع' : 'Add Project')}</button>
+                </div>
+              </form>
+            </div>
+          )}
+
+          {/* Projects Reference Grid Card Layout */}
+          {projects.length === 0 ? (
+            <div className="glass-panel" style={{ padding: '60px 20px', textAlign: 'center', color: 'var(--text-muted)' }}>
+              <Layers size={48} style={{ marginBottom: '15px', color: 'var(--primary)' }} />
+              <p>{language === 'ar' ? 'لا توجد مشاريع مرجعية مسجلة حالياً. اضغط على إضافة مشروع جديد بالأعلى.' : 'No reference projects found.'}</p>
+            </div>
+          ) : (
+            <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(320px, 1fr))', gap: '20px' }}>
+              {projects.filter(p => {
+                const query = projSearchQuery.toLowerCase();
+                return p.title.toLowerCase().includes(query) || 
+                  p.developer.toLowerCase().includes(query) || 
+                  p.location.toLowerCase().includes(query);
+              }).map(proj => (
+                <div key={proj.id} className="glass-panel" style={{ padding: '20px', display: 'flex', flexDirection: 'column', justifyContent: 'space-between', borderTop: '4px solid var(--accent)' }}>
+                  <div>
+                    <h4 style={{ fontSize: '1.1rem', marginBottom: '10px', color: 'white', fontWeight: 'bold' }}>{proj.title}</h4>
+                    <p style={{ color: 'var(--accent)', fontSize: '0.85rem', marginBottom: '15px', fontWeight: 'bold' }}>
+                      🏢 {proj.developer || (language === 'ar' ? 'مطور غير محدد' : 'Unknown Developer')}
+                    </p>
+                    
+                    <div style={{ display: 'flex', flexDirection: 'column', gap: '8px', fontSize: '0.85rem', color: 'var(--text-muted)', marginBottom: '15px' }}>
+                      <div>📍 <strong>{language === 'ar' ? 'الموقع:' : 'Location:'}</strong> {proj.location || '—'}</div>
+                      <div>💰 <strong>{language === 'ar' ? 'يبدأ من:' : 'Starting Price:'}</strong> {proj.startPrice ? `${Number(proj.startPrice).toLocaleString('ar-EG')} جنيه` : '—'}</div>
+                      <div>⏳ <strong>{language === 'ar' ? 'مدة التقسيط:' : 'Installment:'}</strong> {proj.installmentYears ? `${proj.installmentYears} سنوات` : '—'}</div>
+                      <div>📅 <strong>{language === 'ar' ? 'الاستلام:' : 'Delivery:'}</strong> {proj.deliveryDate || '—'}</div>
+                    </div>
+                    
+                    {proj.notes && (
+                      <p style={{ fontSize: '0.8rem', color: 'var(--text-main)', backgroundColor: 'rgba(255,255,255,0.05)', padding: '10px', borderRadius: 'var(--radius-sm)', lineHeight: 1.4, marginBottom: '15px' }}>
+                        💡 {proj.notes}
+                      </p>
+                    )}
+                  </div>
+                  
+                  <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginTop: '15px', paddingTop: '15px', borderTop: '1px solid rgba(255,255,255,0.1)' }}>
+                    {proj.brochureUrl ? (
+                      <a href={proj.brochureUrl} target="_blank" rel="noopener noreferrer" className="btn btn-secondary" style={{ padding: '5px 12px', fontSize: '0.75rem', display: 'flex', alignItems: 'center', gap: '6px', color: 'var(--accent)', borderColor: 'var(--accent)' }}>
+                        <Link size={12} /> {language === 'ar' ? 'فتح البروشور' : 'Brochure'}
+                      </a>
+                    ) : <span />}
+
+                    <div style={{ display: 'flex', gap: '8px' }}>
+                      <button onClick={() => handleEditProject(proj)} className="btn btn-secondary" style={{ padding: '5px 10px', fontSize: '0.75rem' }}>
+                        {language === 'ar' ? 'تعديل' : 'Edit'}
+                      </button>
+                      <button onClick={() => handleDeleteProject(proj.id)} className="btn" style={{ padding: '5px 10px', fontSize: '0.75rem', backgroundColor: 'rgba(239, 68, 68, 0.15)', color: '#ef4444', border: 'none' }}>
+                        {language === 'ar' ? 'حذف' : 'Delete'}
+                      </button>
+                    </div>
+                  </div>
+                </div>
+              ))}
+            </div>
+          )}
         </div>
       ) : dashboardSubTab === 'listings' ? (
         // LISTINGS TAB

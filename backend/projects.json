@@ -1,0 +1,30 @@
+[
+  {
+    "id": "proj_badya",
+    "tenant_id": "tenant-nawy-uuid-1111",
+    "broker_id": "b1111111-1111-1111-1111-111111111111",
+    "title": "بادية بالم هيلز (Badya Palm Hills)",
+    "developer": "بالم هيلز للتعمير (Palm Hills)",
+    "location": "6 أكتوبر (6th of October)",
+    "startPrice": "7000000",
+    "installmentYears": "10",
+    "deliveryDate": "2027",
+    "brochureUrl": "https://palmhillsdevelopments.com/badya",
+    "notes": "مشروع ذكي صديق للبيئة بموقع استراتيجي في أكتوبر الجديدة.",
+    "created_at": "2026-07-16T18:00:00Z"
+  },
+  {
+    "id": "proj_zed",
+    "tenant_id": "tenant-nawy-uuid-1111",
+    "broker_id": "b1111111-1111-1111-1111-111111111111",
+    "title": "أبراج زيد الشيخ زايد (Zed Towers)",
+    "developer": "أورا للتطوير العقاري (ORA)",
+    "location": "الشيخ زايد (Sheikh Zayed)",
+    "startPrice": "12000000",
+    "installmentYears": "8",
+    "deliveryDate": "2026",
+    "brochureUrl": "https://ora.developer/zed-towers",
+    "notes": "أبراج سكنية فاخرة تطل مباشرة على حديقة زايد المركزية (Zed Park).",
+    "created_at": "2026-07-16T18:01:00Z"
+  }
+]
