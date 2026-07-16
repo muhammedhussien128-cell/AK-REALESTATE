@@ -15,102 +15,187 @@ const Navigation: React.FC<{ activeTab: string, setActiveTab: (tab: string) => v
   const { tenant, switchTenant } = useTenant();
 
   return (
-    <nav className="glass-panel" style={{
-      display: 'flex',
-      justifyContent: 'space-between',
-      alignItems: 'center',
-      padding: '15px 30px',
-      marginBottom: '30px',
-      borderRadius: 'var(--radius-md)',
-      flexWrap: 'wrap',
-      gap: '15px'
-    }}>
-      <div style={{ display: 'flex', alignItems: 'center', gap: '15px' }}>
-        <div style={{ display: 'flex', alignItems: 'center', gap: '10px', cursor: 'pointer' }} onClick={() => setActiveTab('marketplace')}>
-          <Building2 size={28} style={{ color: 'var(--primary)' }} />
-          <span style={{ fontSize: '1.4rem', fontWeight: 800 }} className="gradient-text">
+    <>
+      {/* Desktop Navigation */}
+      <nav className="glass-panel desktop-nav" style={{
+        display: 'flex',
+        justifyContent: 'space-between',
+        alignItems: 'center',
+        padding: '15px 30px',
+        marginBottom: '30px',
+        borderRadius: 'var(--radius-md)',
+        flexWrap: 'wrap',
+        gap: '15px'
+      }}>
+        <div style={{ display: 'flex', alignItems: 'center', gap: '15px' }}>
+          <div style={{ display: 'flex', alignItems: 'center', gap: '10px', cursor: 'pointer' }} onClick={() => setActiveTab('marketplace')}>
+            <Building2 size={28} style={{ color: 'var(--primary)' }} />
+            <span style={{ fontSize: '1.4rem', fontWeight: 800 }} className="gradient-text">
+              {tenant.name.split(' ')[0]}
+            </span>
+          </div>
+
+          {/* Tenant Subdomain Switcher */}
+          <div style={{ display: 'flex', alignItems: 'center', gap: '6px', fontSize: '0.85rem', background: 'var(--bg-tertiary)', padding: '4px 10px', borderRadius: '15px' }}>
+            <Layers size={14} style={{ color: 'var(--primary)' }} />
+            <select 
+              value={tenant.subdomain} 
+              onChange={(e) => switchTenant(e.target.value as any)}
+              style={{ background: 'transparent', border: 'none', color: 'var(--text-main)', outline: 'none', cursor: 'pointer', fontWeight: 'bold' }}
+            >
+              <option value="awtad">AK</option>
+              <option value="aqar">Aqar Agency</option>
+            </select>
+          </div>
+        </div>
+
+        <div style={{ display: 'flex', gap: '15px', alignItems: 'center', flexWrap: 'wrap' }}>
+          <a 
+            href={`tel:${tenant.phone}`}
+            className="btn"
+            style={{
+              padding: '8px 16px',
+              backgroundColor: 'var(--primary)',
+              color: 'white',
+              display: 'flex',
+              alignItems: 'center',
+              gap: '8px',
+              fontSize: '0.85rem',
+              textDecoration: 'none',
+              borderRadius: 'var(--radius-sm)'
+            }}
+          >
+            <PhoneCall size={14} />
+            {language === 'ar' ? 'اتصل الآن' : 'Call Now'}
+          </a>
+
+          <button 
+            onClick={toggleLanguage} 
+            className="btn btn-secondary" 
+            style={{ padding: '8px 12px', display: 'flex', alignItems: 'center', gap: '6px' }}
+          >
+            <Globe size={16} />
+            {language === 'ar' ? 'English' : 'عربي'}
+          </button>
+
+          <button 
+            onClick={() => setActiveTab('marketplace')} 
+            className={`btn ${activeTab === 'marketplace' ? 'btn-primary' : 'btn-secondary'}`}
+            style={{ padding: '8px 16px' }}
+          >
+            {language === 'ar' ? 'السوق العقاري' : 'Marketplace'}
+          </button>
+
+          {user && user.role === 'broker' && (
+            <button 
+              onClick={() => setActiveTab('dashboard')} 
+              className={`btn ${activeTab === 'dashboard' ? 'btn-primary' : 'btn-secondary'}`}
+              style={{ padding: '8px 16px' }}
+            >
+              {t('brokerDashboard')}
+            </button>
+          )}
+
+          {user ? (
+            <div style={{ display: 'flex', alignItems: 'center', gap: '15px' }}>
+              <span style={{ color: 'var(--text-muted)', fontSize: '0.9rem', display: 'flex', alignItems: 'center', gap: '6px' }}>
+                {user.role === 'broker' ? <Landmark size={14} style={{ color: 'var(--primary)' }} /> : <User size={14} />}
+                {user.name}
+              </span>
+              <button onClick={logout} className="btn btn-secondary" style={{ padding: '8px 12px', color: 'var(--danger)' }}>
+                <LogOut size={16} /> {t('logout')}
+              </button>
+            </div>
+          ) : (
+            <button onClick={() => setActiveTab('auth')} className="btn btn-primary" style={{ padding: '8px 16px' }}>
+              {t('login')}
+            </button>
+          )}
+        </div>
+      </nav>
+
+      {/* Mobile Thin Top Header */}
+      <div className="mobile-header-bar" style={{
+        display: 'none',
+        justifyContent: 'space-between',
+        alignItems: 'center',
+        padding: '10px 15px',
+        background: 'var(--glass)',
+        backdropFilter: 'var(--glass-blur)',
+        borderBottom: '1px solid var(--border-color)',
+        borderRadius: 'var(--radius-sm)',
+        marginBottom: '20px'
+      }}>
+        <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }} onClick={() => setActiveTab('marketplace')}>
+          <Building2 size={24} style={{ color: 'var(--primary)' }} />
+          <span style={{ fontSize: '1.2rem', fontWeight: 800 }} className="gradient-text">
             {tenant.name.split(' ')[0]}
           </span>
         </div>
-
-        {/* Tenant Subdomain Switcher */}
-        <div style={{ display: 'flex', alignItems: 'center', gap: '6px', fontSize: '0.85rem', background: 'var(--bg-tertiary)', padding: '4px 10px', borderRadius: '15px' }}>
-          <Layers size={14} style={{ color: 'var(--primary)' }} />
-          <select 
-            value={tenant.subdomain} 
-            onChange={(e) => switchTenant(e.target.value as any)}
-            style={{ background: 'transparent', border: 'none', color: 'var(--text-main)', outline: 'none', cursor: 'pointer', fontWeight: 'bold' }}
-          >
-            <option value="awtad">AK</option>
-            <option value="aqar">Aqar Agency</option>
-          </select>
-        </div>
+        
+        {/* Compact Tenant Switcher */}
+        <select 
+          value={tenant.subdomain} 
+          onChange={(e) => switchTenant(e.target.value as any)}
+          style={{ background: 'var(--bg-tertiary)', border: 'none', color: 'var(--text-main)', outline: 'none', cursor: 'pointer', fontWeight: 'bold', fontSize: '0.8rem', padding: '4px 8px', borderRadius: '10px' }}
+        >
+          <option value="awtad">AK</option>
+          <option value="aqar">Aqar</option>
+        </select>
       </div>
 
-      <div style={{ display: 'flex', gap: '15px', alignItems: 'center', flexWrap: 'wrap' }}>
-        <a 
-          href={`tel:${tenant.phone}`}
-          className="btn"
-          style={{
-            padding: '8px 16px',
-            backgroundColor: 'var(--primary)',
-            color: 'white',
-            display: 'flex',
-            alignItems: 'center',
-            gap: '8px',
-            fontSize: '0.85rem',
-            textDecoration: 'none',
-            borderRadius: 'var(--radius-sm)'
-          }}
-        >
-          <PhoneCall size={14} />
-          {language === 'ar' ? 'اتصل الآن' : 'Call Now'}
-        </a>
-
-        <button 
-          onClick={toggleLanguage} 
-          className="btn btn-secondary" 
-          style={{ padding: '8px 12px', display: 'flex', alignItems: 'center', gap: '6px' }}
-        >
-          <Globe size={16} />
-          {language === 'ar' ? 'English' : 'عربي'}
-        </button>
-
+      {/* Mobile Sticky Bottom Tab Bar */}
+      <div className="mobile-nav-bar" style={{ display: 'none' }}>
         <button 
           onClick={() => setActiveTab('marketplace')} 
-          className={`btn ${activeTab === 'marketplace' ? 'btn-primary' : 'btn-secondary'}`}
-          style={{ padding: '8px 16px' }}
+          className={`mobile-nav-item ${activeTab === 'marketplace' ? 'active' : ''}`}
         >
-          {language === 'ar' ? 'السوق العقاري' : 'Marketplace'}
+          <Building2 size={20} />
+          <span>{language === 'ar' ? 'السوق' : 'Market'}</span>
         </button>
 
         {user && user.role === 'broker' && (
           <button 
             onClick={() => setActiveTab('dashboard')} 
-            className={`btn ${activeTab === 'dashboard' ? 'btn-primary' : 'btn-secondary'}`}
-            style={{ padding: '8px 16px' }}
+            className={`mobile-nav-item ${activeTab === 'dashboard' ? 'active' : ''}`}
           >
-            {t('brokerDashboard')}
+            <Landmark size={20} />
+            <span>{language === 'ar' ? 'لوحة التحكم' : 'Dashboard'}</span>
           </button>
         )}
 
+        <button 
+          onClick={toggleLanguage} 
+          className="mobile-nav-item"
+        >
+          <Globe size={20} />
+          <span>{language === 'ar' ? 'English' : 'عربي'}</span>
+        </button>
+
+        <a 
+          href={`tel:${tenant.phone}`}
+          className="mobile-nav-item"
+        >
+          <PhoneCall size={20} style={{ color: 'var(--success)' }} />
+          <span>{language === 'ar' ? 'اتصل' : 'Call'}</span>
+        </a>
+
         {user ? (
-          <div style={{ display: 'flex', alignItems: 'center', gap: '15px' }}>
-            <span style={{ color: 'var(--text-muted)', fontSize: '0.9rem', display: 'flex', alignItems: 'center', gap: '6px' }}>
-              {user.role === 'broker' ? <Landmark size={14} style={{ color: 'var(--primary)' }} /> : <User size={14} />}
-              {user.name}
-            </span>
-            <button onClick={logout} className="btn btn-secondary" style={{ padding: '8px 12px', color: 'var(--danger)' }}>
-              <LogOut size={16} /> {t('logout')}
-            </button>
-          </div>
+          <button onClick={logout} className="mobile-nav-item" style={{ color: 'var(--danger)' }}>
+            <LogOut size={20} />
+            <span>{language === 'ar' ? 'خروج' : 'Logout'}</span>
+          </button>
         ) : (
-          <button onClick={() => setActiveTab('auth')} className="btn btn-primary" style={{ padding: '8px 16px' }}>
-            {t('login')}
+          <button 
+            onClick={() => setActiveTab('auth')} 
+            className={`mobile-nav-item ${activeTab === 'auth' ? 'active' : ''}`}
+          >
+            <User size={20} />
+            <span>{language === 'ar' ? 'دخول' : 'Login'}</span>
           </button>
         )}
       </div>
-    </nav>
+    </>
   );
 };
 

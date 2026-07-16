@@ -226,4 +226,64 @@ body {
   .lead-card-right-section select {
     text-align-last: center;
   }
+
+  /* Sticky bottom navigation bar for PWA feel */
+  .mobile-header-bar {
+    display: flex !important;
+  }
+  .mobile-nav-bar {
+    display: flex !important;
+    position: fixed;
+    bottom: 0;
+    left: 0;
+    right: 0;
+    height: 65px;
+    background: rgba(255, 255, 255, 0.92);
+    backdrop-filter: blur(15px);
+    -webkit-backdrop-filter: blur(15px);
+    border-top: 1px solid var(--border-color);
+    justify-content: space-around;
+    align-items: center;
+    z-index: 1000;
+    padding-bottom: env(safe-area-inset-bottom);
+    box-shadow: 0 -4px 20px rgba(0,0,0,0.06);
+  }
+  .mobile-nav-item {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    color: var(--text-muted);
+    font-size: 0.7rem;
+    text-decoration: none;
+    background: none;
+    border: none;
+    cursor: pointer;
+    gap: 4px;
+    flex: 1;
+    height: 100%;
+    transition: var(--transition);
+  }
+  .mobile-nav-item.active {
+    color: var(--primary);
+    font-weight: bold;
+  }
+  
+  /* Add padding to body to prevent content overlap with sticky bottom bar */
+  body {
+    padding-bottom: 85px !important;
+  }
+  
+  .marketplace-details-container {
+    grid-template-columns: 1fr !important;
+    padding: 20px 15px !important;
+    gap: 20px !important;
+  }
+}
+
+.marketplace-details-container {
+  display: grid;
+  grid-template-columns: 2fr 1fr;
+  gap: 30px;
+  padding: 40px 30px;
 }

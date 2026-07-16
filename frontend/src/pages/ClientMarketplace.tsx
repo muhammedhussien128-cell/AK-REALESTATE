@@ -599,7 +599,7 @@ export const ClientMarketplace: React.FC<{ onNavigateToAuth: () => void; onNavig
             </div>
           </div>
 
-          <div style={{ padding: '40px 30px', display: 'grid', gridTemplateColumns: '2fr 1fr', gap: '30px', flexWrap: 'wrap' }}>
+          <div className="marketplace-details-container">
             <div style={{ display: 'flex', flexDirection: 'column', gap: '30px' }}>
               
               <div style={{
