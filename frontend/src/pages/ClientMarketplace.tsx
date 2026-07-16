@@ -322,6 +322,48 @@ export const ClientMarketplace: React.FC<{ onNavigateToAuth: () => void; onNavig
     setShowWelcomeGate(false);
   };
 
+  const parseJwt = (token: string) => {
+    try {
+      return JSON.parse(atob(token.split('.')[1]));
+    } catch (e) {
+      return null;
+    }
+  };
+
+  // Dynamically load Google GSI script
+  useEffect(() => {
+    const script = document.createElement('script');
+    script.src = 'https://accounts.google.com/gsi/client';
+    script.async = true;
+    script.defer = true;
+    document.body.appendChild(script);
+    return () => {
+      document.body.removeChild(script);
+    };
+  }, []);
+
+  // Initialize and render Google sign-in button
+  useEffect(() => {
+    if (showWelcomeGate && (window as any).google) {
+      try {
+        (window as any).google.accounts.id.initialize({
+          client_id: "1098670559982-f8oheflr5955k53g3aobnptk6b88epd2.apps.googleusercontent.com",
+          callback: (response: any) => {
+            const payload = parseJwt(response.credential);
+            if (payload) {
+              setGateName(payload.name || '');
+              setGateEmail(payload.email || '');
+            }
+          }
+        });
+        (window as any).google.accounts.id.renderButton(
+          document.getElementById("google-login-button-div"),
+          { theme: "filled_blue", size: "large", width: 380 }
+        );
+      } catch (err) {}
+    }
+  }, [showWelcomeGate]);
+
   // Google One-Tap Silent submission logic
   const handleGoogleOneTapConfirm = async () => {
     if (!oneTapPhone) {
@@ -335,8 +377,14 @@ export const ClientMarketplace: React.FC<{ onNavigateToAuth: () => void; onNavig
   };
 
   const handleGoogleOneTap = () => {
-    setGateName('عميل جوجل التجريبي');
-    setGateEmail('google.client@gmail.com');
+    try {
+      if ((window as any).google) {
+        (window as any).google.accounts.id.prompt();
+      }
+    } catch (err) {
+      setGateName('عميل جوجل التجريبي');
+      setGateEmail('google.client@gmail.com');
+    }
   };
 
   // Session duration timer tracking
@@ -743,26 +791,16 @@ export const ClientMarketplace: React.FC<{ onNavigateToAuth: () => void; onNavig
                   : 'For a personalized experience and to download the exclusive 2026 price guides, please sign up.'}
               </p>
 
-              {/* One-Click Google Authentication Simulation Button */}
-              <button 
-                onClick={handleGoogleOneTap} 
-                className="btn btn-secondary" 
-                style={{
-                  width: '100%',
-                  marginBottom: '20px',
-                  display: 'flex',
-                  alignItems: 'center',
-                  justifyContent: 'center',
-                  gap: '10px',
-                  backgroundColor: 'white',
-                  color: '#1e4164',
-                  fontWeight: 'bold',
-                  border: 'none'
+              {/* Official Google Sign-In Button Container */}
+              <div 
+                id="google-login-button-div" 
+                style={{ 
+                  width: '100%', 
+                  display: 'flex', 
+                  justifyContent: 'center', 
+                  marginBottom: '20px' 
                 }}
-              >
-                <Chrome size={18} style={{ color: '#4285F4' }} />
-                {language === 'ar' ? 'الدخول السريع بـ Google' : 'One-Tap Sign In with Google'}
-              </button>
+              ></div>
 
               <div style={{ position: 'relative', margin: '20px 0', height: '1px', background: 'rgba(255,255,255,0.2)' }}>
                 <span style={{
