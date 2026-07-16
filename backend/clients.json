@@ -1,0 +1,62 @@
+[
+  {
+    "id": "a4nzuzfgy",
+    "tenant_id": "tenant-nawy-uuid-1111",
+    "broker_id": "b1111111-1111-1111-1111-111111111111",
+    "name": "عميل جوجل التجريبي",
+    "email": "google.client@gmail.com",
+    "phone": "01280919543",
+    "created_at": "2026-07-16T02:25:30.235Z"
+  },
+  {
+    "id": "9tbmkcj0c",
+    "tenant_id": "tenant-nawy-uuid-1111",
+    "broker_id": "b1111111-1111-1111-1111-111111111111",
+    "name": "عميل جوجل التجريبي",
+    "email": "client@awtad.com",
+    "phone": "01278347296",
+    "created_at": "2026-07-16T02:16:33.184Z"
+  },
+  {
+    "id": "narcbcref",
+    "tenant_id": "tenant-nawy-uuid-1111",
+    "broker_id": "b1111111-1111-1111-1111-111111111111",
+    "name": "عميل جوجل التجريبي",
+    "email": "google.client@gmail.com",
+    "phone": "01278347296",
+    "created_at": "2026-07-15T18:29:11.338Z"
+  },
+  {
+    "id": "c_3jyy7okyk",
+    "tenant_id": "tenant-nawy-uuid-1111",
+    "broker_id": "b1111111-1111-1111-1111-111111111111",
+    "name": "زائر مؤقت",
+    "email": "visitor@awtad.com",
+    "phone": "01000000000",
+    "created_at": "2026-07-15T00:52:52.734Z"
+  },
+  {
+    "id": "cc0hu9rp5",
+    "tenant_id": "tenant-nawy-uuid-1111",
+    "name": "محمد حسين محمد احمد",
+    "email": "google.client@gmail.com",
+    "phone": "01278347296",
+    "created_at": "2026-07-15T00:32:48.132Z"
+  },
+  {
+    "id": "yp9wifcb5",
+    "tenant_id": "tenant-nawy-uuid-1111",
+    "name": "عميل جوجل التجريبي",
+    "email": "google.client@gmail.com",
+    "phone": "01278347296",
+    "created_at": "2026-07-15T00:24:58.542Z"
+  },
+  {
+    "id": "c2222222-2222-2222-2222-222222222222",
+    "tenant_id": "tenant-nawy-uuid-1111",
+    "name": "خالد المشتري",
+    "email": "client@semsar.com",
+    "phone": "+201000000002",
+    "created_at": "2026-07-13T19:24:58Z"
+  }
+]
