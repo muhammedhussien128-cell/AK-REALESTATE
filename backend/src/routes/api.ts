@@ -21,11 +21,13 @@ const leadsFilePath = path.join(__dirname, '../../leads.json');
 const listingsFilePath = path.join(__dirname, '../../listings.json');
 const clientsFilePath = path.join(__dirname, '../../clients.json');
 const projectsFilePath = path.join(__dirname, '../../projects.json');
+const devProfilesFilePath = path.join(__dirname, '../../dev_profiles.json');
 
 let memoryLeads: any[] = [];
 let memoryListings: any[] = [];
 let memoryClients: any[] = [];
 let memoryProjects: any[] = [];
+let memoryDevProfiles: any[] = [];
 let memoryInitialized = false;
 
 const BUCKET_ID = "ak_realestate_db_2026_v2";
@@ -42,6 +44,11 @@ const initMemory = async () => {
   try {
     if (fs.existsSync(listingsFilePath)) {
       memoryListings = JSON.parse(fs.readFileSync(listingsFilePath, 'utf-8'));
+    }
+  } catch (e) {}
+  try {
+    if (fs.existsSync(devProfilesFilePath)) {
+      memoryDevProfiles = JSON.parse(fs.readFileSync(devProfilesFilePath, 'utf-8'));
     }
   } catch (e) {}
   try {
@@ -81,6 +88,13 @@ const initMemory = async () => {
     if (projectsRes.ok) {
       const kvProjects = await projectsRes.json();
       if (Array.isArray(kvProjects) && kvProjects.length > 0) memoryProjects = kvProjects;
+    }
+  } catch (e) {}
+  try {
+    const devProfilesRes = await fetch(`${KV_URL}/dev_profiles`);
+    if (devProfilesRes.ok) {
+      const kvDevProfiles = await devProfilesRes.json();
+      if (Array.isArray(kvDevProfiles) && kvDevProfiles.length > 0) memoryDevProfiles = kvDevProfiles;
     }
   } catch (e) {}
 
@@ -214,6 +228,35 @@ const saveProjectsList = async (projects: any[]) => {
   } catch (e) {}
   try {
     fs.writeFileSync(projectsFilePath, JSON.stringify(projects, null, 2), 'utf-8');
+  } catch (e) {}
+};
+
+// Helper to load dev profiles
+const loadDevProfiles = async (): Promise<any[]> => {
+  await initMemory();
+  try {
+    const res = await fetch(`${KV_URL}/dev_profiles`);
+    if (res.ok) {
+      const kvDevProfiles = await res.json();
+      if (Array.isArray(kvDevProfiles)) memoryDevProfiles = kvDevProfiles;
+    }
+  } catch (e) {}
+  return memoryDevProfiles;
+};
+
+// Helper to save dev profiles list
+const saveDevProfilesList = async (profiles: any[]) => {
+  await initMemory();
+  memoryDevProfiles = profiles;
+  try {
+    await fetch(`${KV_URL}/dev_profiles`, {
+      method: 'POST',
+      body: JSON.stringify(profiles),
+      headers: { 'Content-Type': 'application/json' }
+    });
+  } catch (e) {}
+  try {
+    fs.writeFileSync(devProfilesFilePath, JSON.stringify(profiles, null, 2), 'utf-8');
   } catch (e) {}
 };
 
@@ -824,7 +867,7 @@ router.get('/crm/projects', authenticateToken, requireRole(['broker']), async (r
 });
 
 router.post('/crm/projects', authenticateToken, requireRole(['broker']), async (req: any, res) => {
-  const { title, developer, location, startPrice, installmentYears, deliveryDate, brochureUrl, notes } = req.body;
+  const { title, location, developers } = req.body;
   if (!title) {
     return res.status(400).json({ message: 'يرجى إدخال اسم المشروع.' });
   }
@@ -835,13 +878,8 @@ router.post('/crm/projects', authenticateToken, requireRole(['broker']), async (
     tenant_id: req.tenantId,
     broker_id: req.user.id,
     title,
-    developer: developer || '',
     location: location || '',
-    startPrice: startPrice || '',
-    installmentYears: installmentYears || '',
-    deliveryDate: deliveryDate || '',
-    brochureUrl: brochureUrl || '',
-    notes: notes || '',
+    developers: developers || [],
     created_at: new Date().toISOString()
   };
 
@@ -852,20 +890,15 @@ router.post('/crm/projects', authenticateToken, requireRole(['broker']), async (
 
 router.put('/crm/projects/:id', authenticateToken, requireRole(['broker']), async (req: any, res) => {
   const { id } = req.params;
-  const { title, developer, location, startPrice, installmentYears, deliveryDate, brochureUrl, notes } = req.body;
+  const { title, location, developers } = req.body;
 
   const projects = await loadProjects();
   const index = projects.findIndex((p: any) => p.tenant_id === req.tenantId && p.id === id && p.broker_id === req.user.id);
 
   if (index !== -1) {
     if (title !== undefined) projects[index].title = title;
-    if (developer !== undefined) projects[index].developer = developer;
     if (location !== undefined) projects[index].location = location;
-    if (startPrice !== undefined) projects[index].startPrice = startPrice;
-    if (installmentYears !== undefined) projects[index].installmentYears = installmentYears;
-    if (deliveryDate !== undefined) projects[index].deliveryDate = deliveryDate;
-    if (brochureUrl !== undefined) projects[index].brochureUrl = brochureUrl;
-    if (notes !== undefined) projects[index].notes = notes;
+    if (developers !== undefined) projects[index].developers = developers;
 
     await saveProjectsList(projects);
     return res.json(projects[index]);
@@ -884,6 +917,68 @@ router.delete('/crm/projects/:id', authenticateToken, requireRole(['broker']), a
     return res.json({ success: true });
   }
   return res.status(404).json({ message: 'المشروع غير موجود.' });
+});
+
+// Developer Profiles CRUD routes (for storing developer's history/about info)
+router.get('/crm/dev-profiles', authenticateToken, requireRole(['broker']), async (req: any, res) => {
+  const profiles = await loadDevProfiles();
+  const filtered = profiles.filter((p: any) => p.tenant_id === req.tenantId && p.broker_id === req.user.id);
+  return res.json(filtered);
+});
+
+router.post('/crm/dev-profiles', authenticateToken, requireRole(['broker']), async (req: any, res) => {
+  const { name, about, foundedYear, notes } = req.body;
+  if (!name) {
+    return res.status(400).json({ message: 'يرجى إدخال اسم المطور العقاري.' });
+  }
+
+  const profiles = await loadDevProfiles();
+  const newProfile = {
+    id: 'dev_prof_' + Math.random().toString(36).substr(2, 9),
+    tenant_id: req.tenantId,
+    broker_id: req.user.id,
+    name,
+    about: about || '',
+    foundedYear: foundedYear || '',
+    notes: notes || '',
+    created_at: new Date().toISOString()
+  };
+
+  profiles.unshift(newProfile);
+  await saveDevProfilesList(profiles);
+  return res.status(201).json(newProfile);
+});
+
+router.put('/crm/dev-profiles/:id', authenticateToken, requireRole(['broker']), async (req: any, res) => {
+  const { id } = req.params;
+  const { name, about, foundedYear, notes } = req.body;
+
+  const profiles = await loadDevProfiles();
+  const index = profiles.findIndex((p: any) => p.tenant_id === req.tenantId && p.id === id && p.broker_id === req.user.id);
+
+  if (index !== -1) {
+    if (name !== undefined) profiles[index].name = name;
+    if (about !== undefined) profiles[index].about = about;
+    if (foundedYear !== undefined) profiles[index].foundedYear = foundedYear;
+    if (notes !== undefined) profiles[index].notes = notes;
+
+    await saveDevProfilesList(profiles);
+    return res.json(profiles[index]);
+  }
+  return res.status(404).json({ message: 'المطور غير موجود.' });
+});
+
+router.delete('/crm/dev-profiles/:id', authenticateToken, requireRole(['broker']), async (req: any, res) => {
+  const { id } = req.params;
+  const profiles = await loadDevProfiles();
+  const index = profiles.findIndex((p: any) => p.tenant_id === req.tenantId && p.id === id && p.broker_id === req.user.id);
+
+  if (index !== -1) {
+    profiles.splice(index, 1);
+    await saveDevProfilesList(profiles);
+    return res.json({ success: true });
+  }
+  return res.status(404).json({ message: 'المطور غير موجود.' });
 });
 
 export default router;
