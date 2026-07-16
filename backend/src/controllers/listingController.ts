@@ -28,19 +28,26 @@ export interface Listing {
 
 const listingsFilePath = path.join(__dirname, '../../listings.json');
 
+let memoryListings: Listing[] = [];
+let memoryInitialized = false;
+
 const loadListings = (): Listing[] => {
-  try {
-    if (fs.existsSync(listingsFilePath)) {
-      const fileData = fs.readFileSync(listingsFilePath, 'utf-8');
-      return JSON.parse(fileData);
+  if (!memoryInitialized) {
+    try {
+      if (fs.existsSync(listingsFilePath)) {
+        const fileData = fs.readFileSync(listingsFilePath, 'utf-8');
+        memoryListings = JSON.parse(fileData);
+      }
+    } catch (error) {
+      console.error('Error reading listings file', error);
     }
-  } catch (error) {
-    console.error('Error reading listings file', error);
+    memoryInitialized = true;
   }
-  return [];
+  return memoryListings;
 };
 
 const saveListings = (listings: Listing[]) => {
+  memoryListings = listings;
   try {
     fs.writeFileSync(listingsFilePath, JSON.stringify(listings, null, 2), 'utf-8');
   } catch (error) {

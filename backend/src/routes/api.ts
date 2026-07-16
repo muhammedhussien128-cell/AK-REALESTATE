@@ -21,52 +21,94 @@ const leadsFilePath = path.join(__dirname, '../../leads.json');
 const listingsFilePath = path.join(__dirname, '../../listings.json');
 const clientsFilePath = path.join(__dirname, '../../clients.json');
 
-// Helper to load leads
-const loadLeads = (): any[] => {
+let memoryLeads: any[] = [];
+let memoryListings: any[] = [];
+let memoryClients: any[] = [];
+let memoryInitialized = false;
+
+const initMemory = () => {
+  if (memoryInitialized) return;
   try {
     if (fs.existsSync(leadsFilePath)) {
-      return JSON.parse(fs.readFileSync(leadsFilePath, 'utf-8'));
+      memoryLeads = JSON.parse(fs.readFileSync(leadsFilePath, 'utf-8'));
     }
   } catch (e) {}
-  return [];
+  try {
+    if (fs.existsSync(listingsFilePath)) {
+      memoryListings = JSON.parse(fs.readFileSync(listingsFilePath, 'utf-8'));
+    }
+  } catch (e) {}
+  try {
+    if (fs.existsSync(clientsFilePath)) {
+      memoryClients = JSON.parse(fs.readFileSync(clientsFilePath, 'utf-8'));
+    }
+  } catch (e) {}
+  memoryInitialized = true;
 };
 
-// Helper to save lead
-const saveLead = (newLead: any) => {
+// Helper to load leads
+const loadLeads = (): any[] => {
+  initMemory();
+  return memoryLeads;
+};
+
+// Helper to save leads list
+const saveLeadsList = (leads: any[]) => {
+  initMemory();
+  memoryLeads = leads;
   try {
-    const leads = loadLeads();
-    leads.unshift(newLead);
     fs.writeFileSync(leadsFilePath, JSON.stringify(leads, null, 2), 'utf-8');
-  } catch (e) {}
+  } catch (e) {
+    console.warn('File system is read-only, saved in memory');
+  }
+};
+
+// Helper to save single lead
+const saveLead = (newLead: any) => {
+  const leads = loadLeads();
+  leads.unshift(newLead);
+  saveLeadsList(leads);
 };
 
 // Helper to load listings
 const loadListings = (): any[] => {
+  initMemory();
+  return memoryListings;
+};
+
+// Helper to save listings list
+const saveListingsList = (listings: any[]) => {
+  initMemory();
+  memoryListings = listings;
   try {
-    if (fs.existsSync(listingsFilePath)) {
-      return JSON.parse(fs.readFileSync(listingsFilePath, 'utf-8'));
-    }
-  } catch (e) {}
-  return [];
+    fs.writeFileSync(listingsFilePath, JSON.stringify(listings, null, 2), 'utf-8');
+  } catch (e) {
+    console.warn('File system is read-only, saved in memory');
+  }
 };
 
 // Helper to load clients
 const loadClients = (): any[] => {
-  try {
-    if (fs.existsSync(clientsFilePath)) {
-      return JSON.parse(fs.readFileSync(clientsFilePath, 'utf-8'));
-    }
-  } catch (e) {}
-  return [];
+  initMemory();
+  return memoryClients;
 };
 
-// Helper to save client
-const saveClient = (newClient: any) => {
+// Helper to save clients list
+const saveClientsList = (clients: any[]) => {
+  initMemory();
+  memoryClients = clients;
   try {
-    const clients = loadClients();
-    clients.unshift(newClient);
     fs.writeFileSync(clientsFilePath, JSON.stringify(clients, null, 2), 'utf-8');
-  } catch (e) {}
+  } catch (e) {
+    console.warn('File system is read-only, saved in memory');
+  }
+};
+
+// Helper to save single client
+const saveClient = (newClient: any) => {
+  const clients = loadClients();
+  clients.unshift(newClient);
+  saveClientsList(clients);
 };
 
 // Auth Routes
@@ -276,7 +318,7 @@ router.post('/crm/visitor-activity', (req: any, res) => {
         }
       }
     });
-    fs.writeFileSync(leadsFilePath, JSON.stringify(leads, null, 2), 'utf-8');
+    saveLeadsList(leads);
     return res.json({ success: true, count: targetLeads.length });
   }
 
@@ -403,7 +445,7 @@ router.put('/crm/leads/:id', authenticateToken, requireRole(['broker']), (req: a
     if (qualification !== undefined) leads[index].qualification = qualification;
     if (archived !== undefined) leads[index].archived = archived;
     
-    fs.writeFileSync(leadsFilePath, JSON.stringify(leads, null, 2), 'utf-8');
+    saveLeadsList(leads);
 
     // Auto trigger actions when lead is marked as Sold
     if (status === 'Sold') {
@@ -419,7 +461,7 @@ router.put('/crm/leads/:id', authenticateToken, requireRole(['broker']), (req: a
           phone: leads[index].phone,
           created_at: new Date().toISOString()
         });
-        fs.writeFileSync(clientsFilePath, JSON.stringify(clients, null, 2), 'utf-8');
+        saveClientsList(clients);
       }
 
       const listings = loadListings();
@@ -432,7 +474,7 @@ router.put('/crm/leads/:id', authenticateToken, requireRole(['broker']), (req: a
           listings[listingIndex].unit_count = 0;
           listings[listingIndex].status = 'sold';
         }
-        fs.writeFileSync(listingsFilePath, JSON.stringify(listings, null, 2), 'utf-8');
+        saveListingsList(listings);
       }
     }
 
@@ -449,7 +491,7 @@ router.delete('/crm/leads/:id', authenticateToken, requireRole(['broker']), (req
   
   if (index !== -1) {
     leads.splice(index, 1);
-    fs.writeFileSync(leadsFilePath, JSON.stringify(leads, null, 2), 'utf-8');
+    saveLeadsList(leads);
     return res.json({ success: true });
   }
   return res.status(404).json({ message: 'الطلب غير موجود.' });
@@ -661,7 +703,7 @@ Never invent properties, prices, or details.
         targetLead.chat_history.push(`العميل: ${lastUserMsg}`);
         targetLead.chat_history.push(`المساعد: ${reply}`);
       });
-      fs.writeFileSync(leadsFilePath, JSON.stringify(leads, null, 2), 'utf-8');
+      saveLeadsList(leads);
     }
   }
 
