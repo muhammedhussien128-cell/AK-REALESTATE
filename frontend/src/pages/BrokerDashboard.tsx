@@ -54,22 +54,14 @@ export const BrokerDashboard: React.FC = () => {
   const [dashboardSubTab, setDashboardSubTab] = useState<'analytics' | 'listings' | 'crm' | 'settings' | 'projects'>('analytics');
   
   // Projects Reference Module States
-  interface DeveloperDetails {
-    id: string;
-    name: string;
-    startPrice: string;
-    installmentYears: string;
-    deliveryDate: string;
-    brochureUrl: string;
-    notes: string;
-  }
   interface Project {
     id: string;
     tenant_id: string;
     broker_id: string;
     title: string;
+    description: string;
     location: string;
-    developers: DeveloperDetails[];
+    imgUrl: string;
     created_at: string;
   }
   const [projects, setProjects] = useState<Project[]>([]);
@@ -78,48 +70,9 @@ export const BrokerDashboard: React.FC = () => {
   const [projSearchQuery, setProjSearchQuery] = useState('');
 
   const [projTitle, setProjTitle] = useState('');
+  const [projDescription, setProjDescription] = useState('');
   const [projLocation, setProjLocation] = useState('');
-  const [projDevelopers, setProjDevelopers] = useState<DeveloperDetails[]>([]);
-
-  // State to hold inputs for a single developer being added/edited
-  const [tempDevId, setTempDevId] = useState<string | null>(null);
-  const [tempDevName, setTempDevName] = useState('');
-  const [tempDevStartPrice, setTempDevStartPrice] = useState('');
-  const [tempDevInstallment, setTempDevInstallment] = useState('');
-  const [tempDevDelivery, setTempDevDelivery] = useState('');
-  const [tempDevBrochure, setTempDevBrochure] = useState('');
-  const [tempDevNotes, setTempDevNotes] = useState('');
-  const [showDevForm, setShowDevForm] = useState(false);
-  // Developer Registry States
-  interface DevProfile {
-    id: string;
-    tenant_id: string;
-    broker_id: string;
-    name: string;
-    about: string;
-    foundedYear: string;
-    notes: string;
-    projectsList?: string;
-    created_at: string;
-  }
-  const [devProfiles, setDevProfiles] = useState<DevProfile[]>([]);
-  const [showDevProfileEditor, setShowDevProfileEditor] = useState(false);
-  const [editingDevProfile, setEditingDevProfile] = useState<DevProfile | null>(null);
-  const [devProfSearchQuery, setDevProfSearchQuery] = useState('');
-
-  // Selected developer info modal
-  const [activeDevInfo, setActiveDevInfo] = useState<DevProfile | null>(null);
-  const [showDevInfoModal, setShowDevInfoModal] = useState(false);
-
-  // Dev Profile fields
-  const [devNameField, setDevNameField] = useState('');
-  const [devAboutField, setDevAboutField] = useState('');
-  const [devFoundedField, setDevFoundedField] = useState('');
-  const [devNotesField, setDevNotesField] = useState('');
-  const [devProjectsListField, setDevProjectsListField] = useState('');
-
-  // Tab mode for Projects Reference (either 'projects' or 'developers')
-  const [projectsTabMode, setProjectsTabMode] = useState<'projects' | 'developers'>('projects');
+  const [projImgUrl, setProjImgUrl] = useState('');
   const [showEditor, setShowEditor] = useState(false);
   const [editingListing, setEditingListing] = useState<Listing | null>(null);
 
@@ -244,8 +197,9 @@ export const BrokerDashboard: React.FC = () => {
 
     const payload = {
       title: projTitle,
+      description: projDescription,
       location: projLocation,
-      developers: projDevelopers
+      imgUrl: projImgUrl
     };
 
     try {
@@ -267,8 +221,9 @@ export const BrokerDashboard: React.FC = () => {
         setShowProjectEditor(false);
         setEditingProject(null);
         setProjTitle('');
+        setProjDescription('');
         setProjLocation('');
-        setProjDevelopers([]);
+        setProjImgUrl('');
       }
     } catch (err) {}
   };
@@ -276,53 +231,10 @@ export const BrokerDashboard: React.FC = () => {
   const handleEditProject = (proj: Project) => {
     setEditingProject(proj);
     setProjTitle(proj.title);
+    setProjDescription(proj.description);
     setProjLocation(proj.location);
-    setProjDevelopers(proj.developers || []);
+    setProjImgUrl(proj.imgUrl);
     setShowProjectEditor(true);
-  };
-
-  const handleAddTempDeveloper = () => {
-    if (!tempDevName) return;
-
-    const newDev: DeveloperDetails = {
-      id: tempDevId || 'dev_' + Math.random().toString(36).substr(2, 9),
-      name: tempDevName,
-      startPrice: tempDevStartPrice,
-      installmentYears: tempDevInstallment,
-      deliveryDate: tempDevDelivery,
-      brochureUrl: tempDevBrochure,
-      notes: tempDevNotes
-    };
-
-    if (tempDevId) {
-      setProjDevelopers(projDevelopers.map(d => d.id === tempDevId ? newDev : d));
-    } else {
-      setProjDevelopers([...projDevelopers, newDev]);
-    }
-
-    setTempDevId(null);
-    setTempDevName('');
-    setTempDevStartPrice('');
-    setTempDevInstallment('');
-    setTempDevDelivery('');
-    setTempDevBrochure('');
-    setTempDevNotes('');
-    setShowDevForm(false);
-  };
-
-  const handleEditTempDeveloper = (dev: DeveloperDetails) => {
-    setTempDevId(dev.id);
-    setTempDevName(dev.name);
-    setTempDevStartPrice(dev.startPrice);
-    setTempDevInstallment(dev.installmentYears);
-    setTempDevDelivery(dev.deliveryDate);
-    setTempDevBrochure(dev.brochureUrl);
-    setTempDevNotes(dev.notes);
-    setShowDevForm(true);
-  };
-
-  const handleRemoveTempDeveloper = (devId: string) => {
-    setProjDevelopers(projDevelopers.filter(d => d.id !== devId));
   };
 
   const handleDeleteProject = async (projId: string) => {
@@ -341,111 +253,11 @@ export const BrokerDashboard: React.FC = () => {
     } catch (err) {}
   };
 
-  const fetchDevProfiles = async () => {
-    try {
-      const response = await fetch('/api/crm/dev-profiles', {
-        headers: { 
-          'Authorization': `Bearer ${token}`,
-          'X-Tenant-Subdomain': tenant.subdomain
-        }
-      });
-      if (response.ok) {
-        const data = await response.json();
-        setDevProfiles(data);
-      }
-    } catch (err) {}
-  };
-
-  const handleDevProfileSubmit = async (e: React.FormEvent) => {
-    e.preventDefault();
-    if (!devNameField) return;
-
-    const payload = {
-      name: devNameField,
-      about: devAboutField,
-      foundedYear: devFoundedField,
-      notes: devNotesField,
-      projectsList: devProjectsListField
-    };
-
-    try {
-      const url = editingDevProfile ? `/api/crm/dev-profiles/${editingDevProfile.id}` : '/api/crm/dev-profiles';
-      const method = editingDevProfile ? 'PUT' : 'POST';
-
-      const response = await fetch(url, {
-        method,
-        headers: {
-          'Content-Type': 'application/json',
-          'Authorization': `Bearer ${token}`,
-          'X-Tenant-Subdomain': tenant.subdomain
-        },
-        body: JSON.stringify(payload)
-      });
-
-      if (response.ok) {
-        fetchDevProfiles();
-        setShowDevProfileEditor(false);
-        setEditingDevProfile(null);
-        setDevNameField('');
-        setDevAboutField('');
-        setDevFoundedField('');
-        setDevNotesField('');
-        setDevProjectsListField('');
-      }
-    } catch (err) {}
-  };
-
-  const handleEditDevProfile = (prof: DevProfile) => {
-    setEditingDevProfile(prof);
-    setDevNameField(prof.name);
-    setDevAboutField(prof.about);
-    setDevFoundedField(prof.foundedYear);
-    setDevNotesField(prof.notes);
-    setDevProjectsListField(prof.projectsList || '');
-    setShowDevProfileEditor(true);
-  };
-
-  const handleDeleteDevProfile = async (profId: string) => {
-    if (!window.confirm(language === 'ar' ? 'هل أنت متأكد من حذف هذا المطور تماماً؟ سيتم إزالته من السجل العقاري.' : 'Are you sure you want to delete this developer profile?')) return;
-    try {
-      const response = await fetch(`/api/crm/dev-profiles/${profId}`, {
-        method: 'DELETE',
-        headers: { 
-          'Authorization': `Bearer ${token}`,
-          'X-Tenant-Subdomain': tenant.subdomain
-        }
-      });
-      if (response.ok) {
-        fetchDevProfiles();
-      }
-    } catch (err) {}
-  };
-
-  const handleViewDeveloperProfile = (devName: string) => {
-    const matchedProfile = devProfiles.find(p => p.name.toLowerCase().includes(devName.toLowerCase()) || devName.toLowerCase().includes(p.name.toLowerCase()));
-    if (matchedProfile) {
-      setActiveDevInfo(matchedProfile);
-    } else {
-      setActiveDevInfo({
-        id: 'temp',
-        tenant_id: tenant.subdomain,
-        broker_id: user?.id || '',
-        name: devName,
-        about: language === 'ar' ? 'لم يتم إضافة نبذة تاريخية لهذا المطور بعد في سجل المطورين. يمكنك إضافته من تبويب سجل المطورين.' : 'No profile history added for this developer yet. You can add them from the Developers Registry tab.',
-        foundedYear: '—',
-        notes: '',
-        created_at: ''
-      });
-    }
-    setShowDevInfoModal(true);
-  };
-
   useEffect(() => {
     fetchBrokerListings();
     fetchCRMLeads();
     fetchCRMUsers();
     fetchProjects();
-    fetchDevProfiles();
   }, [user, tenant]);
 
   const handleSaveSettings = async (e: React.FormEvent) => {
@@ -1045,443 +857,113 @@ export const BrokerDashboard: React.FC = () => {
       ) : dashboardSubTab === 'projects' ? (
         // PROJECTS REFERENCE TAB
         <div>
-          {/* Internal subtab navigation toggle */}
-          <div style={{ display: 'flex', gap: '10px', marginBottom: '25px', borderBottom: '1px solid rgba(255,255,255,0.1)', paddingBottom: '15px' }}>
+          <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '20px', flexWrap: 'wrap', gap: '15px' }}>
+            {/* Search project bar */}
+            <div style={{ position: 'relative', flex: '1', maxWidth: '400px' }}>
+              <Search size={16} style={{ position: 'absolute', right: '12px', top: '12px', color: 'var(--text-muted)' }} />
+              <input 
+                type="text" 
+                className="form-control" 
+                placeholder={language === 'ar' ? 'ابحث عن مشروع بالاسم أو الموقع...' : 'Search projects...'}
+                value={projSearchQuery}
+                onChange={e => setProjSearchQuery(e.target.value)}
+                style={{ paddingRight: '38px', fontSize: '0.85rem' }}
+              />
+            </div>
+            
             <button 
-              onClick={() => setProjectsTabMode('projects')} 
-              className={`btn ${projectsTabMode === 'projects' ? 'btn-primary' : 'btn-secondary'}`}
-              style={{ fontSize: '0.85rem', padding: '8px 16px' }}
+              onClick={() => {
+                setEditingProject(null);
+                setProjTitle('');
+                setProjDescription('');
+                setProjLocation('');
+                setProjImgUrl('');
+                setShowProjectEditor(true);
+              }} 
+              className="btn btn-primary"
             >
-              📂 {language === 'ar' ? 'المشاريع العقارية' : 'Real Estate Projects'}
-            </button>
-            <button 
-              onClick={() => setProjectsTabMode('developers')} 
-              className={`btn ${projectsTabMode === 'developers' ? 'btn-primary' : 'btn-secondary'}`}
-              style={{ fontSize: '0.85rem', padding: '8px 16px' }}
-            >
-              🏢 {language === 'ar' ? 'سجل المطورين العقاريين' : 'Developers Registry'}
+              <Plus size={18} /> {language === 'ar' ? 'إضافة مشروع جديد' : 'Add New Project'}
             </button>
           </div>
 
-          {projectsTabMode === 'projects' ? (
-            // ================= PROJECTS VIEW =================
-            <div>
-              <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '20px', flexWrap: 'wrap', gap: '15px' }}>
-                {/* Search project bar */}
-                <div style={{ position: 'relative', flex: '1', maxWidth: '400px' }}>
-                  <Search size={16} style={{ position: 'absolute', right: '12px', top: '12px', color: 'var(--text-muted)' }} />
-                  <input 
-                    type="text" 
-                    className="form-control" 
-                    placeholder={language === 'ar' ? 'ابحث عن مشروع بالاسم أو الموقع...' : 'Search projects...'}
-                    value={projSearchQuery}
-                    onChange={e => setProjSearchQuery(e.target.value)}
-                    style={{ paddingRight: '38px', fontSize: '0.85rem' }}
-                  />
+          {/* Modal / Inline Editor for Project */}
+          {showProjectEditor && (
+            <div className="glass-panel" style={{ padding: '25px', marginBottom: '30px', border: '2px solid var(--accent)', backgroundColor: 'white', color: 'var(--primary)' }}>
+              <h3 style={{ fontSize: '1.2rem', marginBottom: '20px', fontWeight: 'bold' }}>
+                {editingProject ? (language === 'ar' ? 'تعديل المشروع' : 'Edit Project') : (language === 'ar' ? 'إضافة مشروع جديد للسجل' : 'Add New Project to registry')}
+              </h3>
+              
+              <form onSubmit={handleProjectSubmit} style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '15px' }}>
+                <div>
+                  <label style={{ display: 'block', marginBottom: '5px', fontSize: '0.85rem', color: 'var(--text-muted)' }}>{language === 'ar' ? 'اسم المشروع *' : 'Project Name *'}</label>
+                  <input type="text" className="form-control" value={projTitle} onChange={e => setProjTitle(e.target.value)} required />
+                </div>
+                <div>
+                  <label style={{ display: 'block', marginBottom: '5px', fontSize: '0.85rem', color: 'var(--text-muted)' }}>{language === 'ar' ? 'الموقع الجغرافي للمشروع' : 'Project Location'}</label>
+                  <input type="text" className="form-control" value={projLocation} onChange={e => setProjLocation(e.target.value)} placeholder={language === 'ar' ? 'مثال: التجمع الخامس، العاصمة الإدارية...' : 'e.g. New Cairo, New Capital...'} />
+                </div>
+                <div style={{ gridColumn: 'span 2' }}>
+                  <label style={{ display: 'block', marginBottom: '5px', fontSize: '0.85rem', color: 'var(--text-muted)' }}>{language === 'ar' ? 'رابط صورة المشروع' : 'Project Image URL'}</label>
+                  <input type="url" className="form-control" value={projImgUrl} onChange={e => setProjImgUrl(e.target.value)} placeholder="https://..." />
+                </div>
+                <div style={{ gridColumn: 'span 2' }}>
+                  <label style={{ display: 'block', marginBottom: '5px', fontSize: '0.85rem', color: 'var(--text-muted)' }}>{language === 'ar' ? 'توصيف وتفاصيل المشروع' : 'Project Description & Details'}</label>
+                  <textarea className="form-control" rows={4} value={projDescription} onChange={e => setProjDescription(e.target.value)} placeholder={language === 'ar' ? 'تفاصيل المشروع، المطورين، طرق السداد، مساحات الشقق...' : 'Project details, installment options, specs...'} style={{ resize: 'vertical' }} />
                 </div>
                 
-                <button 
-                  onClick={() => {
-                    setEditingProject(null);
-                    setProjTitle('');
-                    setProjLocation('');
-                    setProjDevelopers([]);
-                    setShowProjectEditor(true);
-                  }} 
-                  className="btn btn-primary"
-                >
-                  <Plus size={18} /> {language === 'ar' ? 'إضافة مشروع مرجعي' : 'Add Reference Project'}
-                </button>
-              </div>
-
-              {/* Modal / Inline Editor for Project */}
-              {showProjectEditor && (
-                <div className="glass-panel" style={{ padding: '25px', marginBottom: '30px', border: '2px solid var(--accent)' }}>
-                  <h3 style={{ fontSize: '1.2rem', marginBottom: '20px' }}>
-                    {editingProject ? (language === 'ar' ? 'تعديل المشروع المرجعي' : 'Edit Reference Project') : (language === 'ar' ? 'إضافة مشروع مرجعي جديد' : 'Add New Reference Project')}
-                  </h3>
-                  
-                  <form onSubmit={handleProjectSubmit} style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(250px, 1fr))', gap: '15px' }}>
-                    <div>
-                      <label style={{ display: 'block', marginBottom: '5px', fontSize: '0.85rem', color: 'var(--text-muted)' }}>{language === 'ar' ? 'اسم المشروع *' : 'Project Name *'}</label>
-                      <input type="text" className="form-control" value={projTitle} onChange={e => setProjTitle(e.target.value)} required />
-                    </div>
-                    <div>
-                      <label style={{ display: 'block', marginBottom: '5px', fontSize: '0.85rem', color: 'var(--text-muted)' }}>{language === 'ar' ? 'الموقع العام للمشروع' : 'Location'}</label>
-                      <input type="text" className="form-control" value={projLocation} onChange={e => setProjLocation(e.target.value)} />
-                    </div>
-
-                    {/* Added Developers List inside the editor */}
-                    <div style={{ gridColumn: 'span 2', marginTop: '15px' }}>
-                      <strong style={{ display: 'block', marginBottom: '10px', fontSize: '0.95rem', color: 'white' }}>
-                        {language === 'ar' ? 'المطورون العقاريون داخل المشروع وطرق سدادهم:' : 'Developers for this project:'}
-                      </strong>
-                      {projDevelopers.length === 0 ? (
-                        <p style={{ color: 'var(--text-muted)', fontSize: '0.8rem' }}>{language === 'ar' ? 'لا يوجد مطورين مضافين حالياً. يرجى إضافة مطور عقاري واحد على الأقل بالأسفل.' : 'No developers added yet.'}</p>
-                      ) : (
-                        <div style={{ display: 'flex', flexDirection: 'column', gap: '8px', marginBottom: '15px' }}>
-                          {projDevelopers.map(dev => (
-                            <div key={dev.id} style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', padding: '8px 12px', backgroundColor: 'rgba(255,255,255,0.05)', borderRadius: 'var(--radius-sm)' }}>
-                              <div>
-                                <strong style={{ color: 'var(--accent)', fontSize: '0.85rem' }}>🏢 {dev.name}</strong>
-                                <span style={{ fontSize: '0.75rem', color: 'var(--text-muted)', marginRight: '10px' }}>
-                                  ({dev.startPrice ? `${Number(dev.startPrice).toLocaleString('ar-EG')} ج` : ''} - {dev.installmentYears ? `${dev.installmentYears} سنوات` : ''})
-                                </span>
-                              </div>
-                              <div style={{ display: 'flex', gap: '8px' }}>
-                                <button type="button" onClick={() => handleEditTempDeveloper(dev)} className="btn btn-secondary" style={{ padding: '3px 8px', fontSize: '0.7rem' }}>{language === 'ar' ? 'تعديل' : 'Edit'}</button>
-                                <button type="button" onClick={() => handleRemoveTempDeveloper(dev.id)} className="btn" style={{ padding: '3px 8px', fontSize: '0.7rem', backgroundColor: 'rgba(239,68,68,0.15)', color: '#ef4444', border: 'none' }}>{language === 'ar' ? 'إزالة' : 'Remove'}</button>
-                              </div>
-                            </div>
-                          ))}
-                        </div>
-                      )}
-                      
-                      {/* Developer mini form */}
-                      {!showDevForm ? (
-                        <button type="button" onClick={() => { setTempDevId(null); setTempDevName(''); setTempDevStartPrice(''); setTempDevInstallment(''); setTempDevDelivery(''); setTempDevBrochure(''); setTempDevNotes(''); setShowDevForm(true); }} className="btn btn-secondary" style={{ fontSize: '0.8rem', padding: '6px 12px' }}>
-                          + {language === 'ar' ? 'إضافة مطور وتفاصيله للمشروع' : 'Add Developer Detail'}
-                        </button>
-                      ) : (
-                        <div style={{ padding: '15px', border: '1px dashed var(--accent)', borderRadius: 'var(--radius-sm)', backgroundColor: 'rgba(255,255,255,0.02)', marginTop: '10px', display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '10px' }}>
-                          <div style={{ gridColumn: 'span 2' }}>
-                            <label style={{ fontSize: '0.75rem', color: 'var(--text-muted)' }}>{language === 'ar' ? 'اسم المطور العقاري *' : 'Developer Name *'}</label>
-                            <input type="text" className="form-control" value={tempDevName} onChange={e => setTempDevName(e.target.value)} placeholder="مثال: طلعت مصطفى، أوراسكوم..." required />
-                          </div>
-                          <div>
-                            <label style={{ fontSize: '0.75rem', color: 'var(--text-muted)' }}>{language === 'ar' ? 'يبدأ من سعر (جنيه)' : 'Starting Price (EGP)'}</label>
-                            <input type="text" className="form-control" value={tempDevStartPrice} onChange={e => setTempDevStartPrice(e.target.value)} />
-                          </div>
-                          <div>
-                            <label style={{ fontSize: '0.75rem', color: 'var(--text-muted)' }}>{language === 'ar' ? 'سنوات التقسيط' : 'Installment Years'}</label>
-                            <input type="text" className="form-control" value={tempDevInstallment} onChange={e => setTempDevInstallment(e.target.value)} />
-                          </div>
-                          <div>
-                            <label style={{ fontSize: '0.75rem', color: 'var(--text-muted)' }}>{language === 'ar' ? 'تاريخ الاستلام' : 'Delivery Date'}</label>
-                            <input type="text" className="form-control" value={tempDevDelivery} onChange={e => setTempDevDelivery(e.target.value)} />
-                          </div>
-                          <div>
-                            <label style={{ fontSize: '0.75rem', color: 'var(--text-muted)' }}>{language === 'ar' ? 'رابط البروشور' : 'Brochure URL'}</label>
-                            <input type="url" className="form-control" value={tempDevBrochure} onChange={e => setTempDevBrochure(e.target.value)} placeholder="https://..." />
-                          </div>
-                          <div style={{ gridColumn: 'span 2' }}>
-                            <label style={{ fontSize: '0.75rem', color: 'var(--text-muted)' }}>{language === 'ar' ? 'تفاصيل السداد والملاحظات' : 'Payment Plans & Notes'}</label>
-                            <textarea className="form-control" rows={2} value={tempDevNotes} onChange={e => setTempDevNotes(e.target.value)} />
-                          </div>
-                          <div style={{ gridColumn: 'span 2', display: 'flex', gap: '8px', justifyContent: 'flex-end', marginTop: '10px' }}>
-                            <button type="button" onClick={() => setShowDevForm(false)} className="btn btn-secondary" style={{ padding: '4px 10px', fontSize: '0.75rem' }}>{language === 'ar' ? 'إلغاء' : 'Cancel'}</button>
-                            <button type="button" onClick={handleAddTempDeveloper} className="btn btn-primary" style={{ padding: '4px 12px', fontSize: '0.75rem' }}>
-                              {tempDevId ? (language === 'ar' ? 'حفظ تعديل المطور' : 'Save Dev') : (language === 'ar' ? 'تأكيد إضافة المطور' : 'Confirm Add Dev')}
-                            </button>
-                          </div>
-                        </div>
-                      )}
-                    </div>
-
-                    <div style={{ gridColumn: 'span 2', display: 'flex', gap: '10px', justifyContent: 'flex-end', marginTop: '10px' }}>
-                      <button type="button" onClick={() => { setShowProjectEditor(false); setEditingProject(null); }} className="btn btn-secondary">{language === 'ar' ? 'إلغاء' : 'Cancel'}</button>
-                      <button type="submit" className="btn btn-primary">{editingProject ? (language === 'ar' ? 'تحديث المشروع' : 'Update Project') : (language === 'ar' ? 'إضافة المشروع' : 'Add Project')}</button>
-                    </div>
-                  </form>
+                <div style={{ gridColumn: 'span 2', display: 'flex', gap: '10px', justifyContent: 'flex-end', marginTop: '10px' }}>
+                  <button type="button" onClick={() => { setShowProjectEditor(false); setEditingProject(null); }} className="btn btn-secondary">{language === 'ar' ? 'إلغاء' : 'Cancel'}</button>
+                  <button type="submit" className="btn btn-primary">{editingProject ? (language === 'ar' ? 'تحديث المشروع' : 'Update Project') : (language === 'ar' ? 'إضافة المشروع' : 'Add Project')}</button>
                 </div>
-              )}
-
-              {/* Projects Grid Card Layout */}
-              {projects.length === 0 ? (
-                <div className="glass-panel" style={{ padding: '60px 20px', textAlign: 'center', color: 'var(--text-muted)' }}>
-                  <Layers size={48} style={{ marginBottom: '15px', color: 'var(--primary)' }} />
-                  <p>{language === 'ar' ? 'لا توجد مشاريع مرجعية مسجلة حالياً. اضغط على إضافة مشروع جديد بالأعلى.' : 'No reference projects found.'}</p>
-                </div>
-              ) : (
-                <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(350px, 1fr))', gap: '20px' }}>
-                  {projects.filter(p => {
-                    const query = projSearchQuery.toLowerCase();
-                    return p.title.toLowerCase().includes(query) || p.location.toLowerCase().includes(query);
-                  }).map(proj => (
-                    <div key={proj.id} className="glass-panel" style={{ padding: '20px', display: 'flex', flexDirection: 'column', justifyContent: 'space-between', borderTop: '4px solid var(--accent)', backgroundColor: 'white' }}>
-                      <div>
-                        <h4 style={{ fontSize: '1.25rem', marginBottom: '8px', color: 'var(--primary)', fontWeight: 800 }}>{proj.title}</h4>
-                        <div style={{ fontSize: '0.85rem', color: 'var(--text-muted)', marginBottom: '15px' }}>
-                          📍 <strong>{language === 'ar' ? 'الموقع العام:' : 'General Location:'}</strong> {proj.location || '—'}
-                        </div>
-
-                        <div style={{ marginTop: '15px' }}>
-                          <strong style={{ fontSize: '0.9rem', color: 'var(--primary)', display: 'block', marginBottom: '10px', borderBottom: '1px solid rgba(0,0,0,0.1)', paddingBottom: '5px', fontWeight: 'bold' }}>
-                            {language === 'ar' ? 'المطورون العقاريون (اضغط للاطلاع على تاريخ المطور):' : 'Developers (Click to view profile & history):'}
-                          </strong>
-                          {(!proj.developers || proj.developers.length === 0) ? (
-                            <span style={{ fontSize: '0.8rem', color: 'var(--text-muted)' }}>{language === 'ar' ? 'لم يتم إضافة مطورين بعد' : 'No developers added.'}</span>
-                          ) : (
-                            <div style={{ display: 'flex', flexDirection: 'column', gap: '12px' }}>
-                              {proj.developers.map((dev: any) => (
-                                <div key={dev.id} style={{ padding: '10px', backgroundColor: 'rgba(30,65,100,0.03)', borderRadius: 'var(--radius-sm)', borderRight: '4px solid var(--accent)', color: 'var(--primary)' }}>
-                                  <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '6px' }}>
-                                    <strong 
-                                      onClick={() => handleViewDeveloperProfile(dev.name)} 
-                                      style={{ color: 'var(--primary)', fontSize: '0.9rem', fontWeight: 'bold', cursor: 'pointer', textDecoration: 'underline' }}
-                                      title={language === 'ar' ? 'عرض تاريخ المطور وتفاصيله' : 'View developer profile & history'}
-                                    >
-                                      🏢 {dev.name}
-                                    </strong>
-                                    {dev.brochureUrl && (
-                                      <a href={dev.brochureUrl} target="_blank" rel="noopener noreferrer" style={{ fontSize: '0.75rem', color: 'var(--accent)', textDecoration: 'underline', fontWeight: 'bold' }}>
-                                        {language === 'ar' ? 'فتح البروشور' : 'Brochure'}
-                                      </a>
-                                    )}
-                                  </div>
-                                  <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '6px', fontSize: '0.8rem', color: '#555' }}>
-                                    <div>💰 {dev.startPrice ? `${Number(dev.startPrice).toLocaleString('ar-EG')} ج` : '—'}</div>
-                                    <div>⏳ {dev.installmentYears ? `${dev.installmentYears} سنوات` : '—'}</div>
-                                    <div style={{ gridColumn: 'span 2' }}>📅 {language === 'ar' ? 'الاستلام:' : 'Delivery:'} {dev.deliveryDate || '—'}</div>
-                                  </div>
-                                  {dev.notes && (
-                                    <div style={{ marginTop: '5px', fontSize: '0.75rem', color: '#444', borderTop: '1px dashed rgba(0,0,0,0.08)', paddingTop: '4px', lineHeight: 1.4 }}>
-                                      💡 {dev.notes}
-                                    </div>
-                                  )}
-                                </div>
-                              ))}
-                            </div>
-                          )}
-                        </div>
-                      </div>
-                      
-                      <div style={{ display: 'flex', justifyContent: 'flex-end', gap: '8px', marginTop: '20px', paddingTop: '15px', borderTop: '1px solid rgba(0,0,0,0.08)' }}>
-                        <button onClick={() => handleEditProject(proj)} className="btn btn-secondary" style={{ padding: '5px 12px', fontSize: '0.75rem', color: 'var(--primary)', borderColor: '#ccc' }}>
-                          {language === 'ar' ? 'تعديل' : 'Edit'}
-                        </button>
-                        <button onClick={() => handleDeleteProject(proj.id)} className="btn" style={{ padding: '5px 12px', fontSize: '0.75rem', backgroundColor: 'rgba(239, 68, 68, 0.15)', color: '#ef4444', border: 'none' }}>
-                          {language === 'ar' ? 'حذف' : 'Delete'}
-                        </button>
-                      </div>
-                    </div>
-                  ))}
-                </div>
-              )}
-            </div>
-          ) : (
-            // ================= DEVELOPERS REGISTRY VIEW =================
-            <div>
-              <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '20px', flexWrap: 'wrap', gap: '15px' }}>
-                {/* Search profile bar */}
-                <div style={{ position: 'relative', flex: '1', maxWidth: '400px' }}>
-                  <Search size={16} style={{ position: 'absolute', right: '12px', top: '12px', color: 'var(--text-muted)' }} />
-                  <input 
-                    type="text" 
-                    className="form-control" 
-                    placeholder={language === 'ar' ? 'ابحث عن مطور بالاسم أو سنة التأسيس...' : 'Search developers...'}
-                    value={devProfSearchQuery}
-                    onChange={e => setDevProfSearchQuery(e.target.value)}
-                    style={{ paddingRight: '38px', fontSize: '0.85rem' }}
-                  />
-                </div>
-                
-                <button 
-                  onClick={() => {
-                    setEditingDevProfile(null);
-                    setDevNameField('');
-                    setDevAboutField('');
-                    setDevFoundedField('');
-                    setDevNotesField('');
-                    setShowDevProfileEditor(true);
-                  }} 
-                  className="btn btn-primary"
-                >
-                  <Plus size={18} /> {language === 'ar' ? 'إضافة مطور للسجل' : 'Add Developer Profile'}
-                </button>
-              </div>
-
-              {/* Modal / Inline Editor for Developer Profile */}
-              {showDevProfileEditor && (
-                <div className="glass-panel" style={{ padding: '25px', marginBottom: '30px', border: '2px solid var(--accent)' }}>
-                  <h3 style={{ fontSize: '1.2rem', marginBottom: '20px' }}>
-                    {editingDevProfile ? (language === 'ar' ? 'تعديل ملف المطور' : 'Edit Developer Profile') : (language === 'ar' ? 'إضافة مطور عقاري جديد للسجل' : 'Add New Developer Profile')}
-                  </h3>
-                  
-                  <form onSubmit={handleDevProfileSubmit} style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(250px, 1fr))', gap: '15px' }}>
-                    <div>
-                      <label style={{ display: 'block', marginBottom: '5px', fontSize: '0.85rem', color: 'var(--text-muted)' }}>{language === 'ar' ? 'اسم المطور العقاري *' : 'Developer Name *'}</label>
-                      <input type="text" className="form-control" value={devNameField} onChange={e => setDevNameField(e.target.value)} required />
-                    </div>
-                    <div>
-                      <label style={{ display: 'block', marginBottom: '5px', fontSize: '0.85rem', color: 'var(--text-muted)' }}>{language === 'ar' ? 'سنة التأسيس' : 'Founded Year'}</label>
-                      <input type="text" className="form-control" value={devFoundedField} onChange={e => setDevFoundedField(e.target.value)} placeholder="مثال: 1995" />
-                    </div>
-                    <div style={{ gridColumn: 'span 2' }}>
-                      <label style={{ display: 'block', marginBottom: '5px', fontSize: '0.85rem', color: 'var(--text-muted)' }}>{language === 'ar' ? 'نبذة تاريخية ومعلومات عامة (About)' : 'History & About'}</label>
-                      <textarea className="form-control" rows={3} value={devAboutField} onChange={e => setDevAboutField(e.target.value)} placeholder={language === 'ar' ? 'تاريخ الشركة، سابقة أعمالها، وتوجهها...' : 'Company history, past projects...'} style={{ resize: 'vertical' }} />
-                    </div>
-                    <div style={{ gridColumn: 'span 2' }}>
-                      <label style={{ display: 'block', marginBottom: '5px', fontSize: '0.85rem', color: 'var(--text-muted)' }}>{language === 'ar' ? 'المشاريع التي يعمل بها المطور / سابقة الأعمال' : 'Projects developed / track record'}</label>
-                      <input type="text" className="form-control" value={devProjectsListField} onChange={e => setDevProjectsListField(e.target.value)} placeholder={language === 'ar' ? 'مثال: مدينتي، الرحاب، سيليا، بادية بالم هيلز...' : 'e.g. Madinaty, Al Rehab, Badya...'} />
-                    </div>
-                    <div style={{ gridColumn: 'span 2' }}>
-                      <label style={{ display: 'block', marginBottom: '5px', fontSize: '0.85rem', color: 'var(--text-muted)' }}>{language === 'ar' ? 'ملاحظات إضافية' : 'Additional Notes'}</label>
-                      <textarea className="form-control" rows={2} value={devNotesField} onChange={e => setDevNotesField(e.target.value)} style={{ resize: 'vertical' }} />
-                    </div>
-                    
-                    <div style={{ gridColumn: 'span 2', display: 'flex', gap: '10px', justifyContent: 'flex-end', marginTop: '10px' }}>
-                      <button type="button" onClick={() => { setShowDevProfileEditor(false); setEditingDevProfile(null); }} className="btn btn-secondary">{language === 'ar' ? 'إلغاء' : 'Cancel'}</button>
-                      <button type="submit" className="btn btn-primary">{editingDevProfile ? (language === 'ar' ? 'تحديث الملف' : 'Update Profile') : (language === 'ar' ? 'حفظ الملف' : 'Save Profile')}</button>
-                    </div>
-                  </form>
-                </div>
-              )}
-
-              {/* Developer Profiles Grid */}
-              {devProfiles.length === 0 ? (
-                <div className="glass-panel" style={{ padding: '60px 20px', textAlign: 'center', color: 'var(--text-muted)' }}>
-                  <Users size={48} style={{ marginBottom: '15px', color: 'var(--primary)' }} />
-                  <p>{language === 'ar' ? 'لا يوجد مطورين مسجلين في السجل العقاري حالياً.' : 'No developer profiles found.'}</p>
-                </div>
-              ) : (
-                <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(320px, 1fr))', gap: '20px' }}>
-                  {devProfiles.filter(p => {
-                    const query = devProfSearchQuery.toLowerCase();
-                    return p.name.toLowerCase().includes(query) || p.foundedYear.toLowerCase().includes(query);
-                  }).map(prof => {
-                    // Filter projects where this developer is involved
-                    const associated = projects.filter(proj => proj.developers && proj.developers.some((d: any) => d.name.toLowerCase().includes(prof.name.toLowerCase()) || prof.name.toLowerCase().includes(d.name.toLowerCase())));
-                    
-                    return (
-                      <div key={prof.id} className="glass-panel" style={{ padding: '20px', display: 'flex', flexDirection: 'column', justifyContent: 'space-between', borderTop: '4px solid var(--accent)', backgroundColor: 'white', color: 'var(--primary)' }}>
-                        <div>
-                          <h4 style={{ fontSize: '1.2rem', marginBottom: '4px', color: 'var(--primary)', fontWeight: 'bold' }}>🏢 {prof.name}</h4>
-                          <span style={{ fontSize: '0.75rem', color: 'var(--text-muted)', display: 'block', marginBottom: '12px' }}>
-                            📅 {language === 'ar' ? `تأسست عام: ${prof.foundedYear || 'غير محدد'}` : `Founded: ${prof.foundedYear || 'N/A'}`}
-                          </span>
-
-                          <div style={{ fontSize: '0.8rem', color: '#444', lineHeight: '1.4', marginBottom: '15px' }}>
-                            <strong>{language === 'ar' ? 'نبذة وتاريخ المطور:' : 'About/History:'}</strong>
-                            <p style={{ marginTop: '4px', backgroundColor: 'rgba(30,65,100,0.02)', padding: '8px', borderRadius: 'var(--radius-sm)' }}>{prof.about || '—'}</p>
-                          </div>
-
-                          {prof.projectsList && (
-                            <div style={{ fontSize: '0.8rem', color: '#444', lineHeight: '1.4', marginBottom: '15px' }}>
-                              <strong>{language === 'ar' ? 'المشاريع التي يعمل بها المطور:' : 'Projects developed:'}</strong>
-                              <p style={{ marginTop: '4px', backgroundColor: 'rgba(245, 158, 11, 0.05)', padding: '8px', borderRadius: 'var(--radius-sm)', borderRight: '3px solid #f59e0b' }}>{prof.projectsList}</p>
-                            </div>
-                          )}
-
-                          {prof.notes && (
-                            <div style={{ fontSize: '0.75rem', color: '#666', marginBottom: '15px' }}>
-                              <strong>{language === 'ar' ? 'ملاحظات الوساطة:' : 'Brokerage Notes:'}</strong> {prof.notes}
-                            </div>
-                          )}
-
-                          {/* Associated projects badges */}
-                          <div style={{ marginTop: '12px' }}>
-                            <strong style={{ fontSize: '0.75rem', color: 'var(--primary)', display: 'block', marginBottom: '6px' }}>
-                              📂 {language === 'ar' ? 'مشاريع يشارك فيها المطور على الموقع:' : 'Involved in projects:'}
-                            </strong>
-                            {associated.length === 0 ? (
-                              <span style={{ fontSize: '0.75rem', color: 'var(--text-muted)', fontStyle: 'italic' }}>{language === 'ar' ? 'لم يتم إدراج هذا المطور في أي مشاريع بالموقع بعد' : 'Not linked to any projects.'}</span>
-                            ) : (
-                              <div style={{ display: 'flex', flexWrap: 'wrap', gap: '6px' }}>
-                                {associated.map(ap => (
-                                  <span 
-                                    key={ap.id} 
-                                    onClick={() => {
-                                      setProjectsTabMode('projects');
-                                      setProjSearchQuery(ap.title);
-                                    }}
-                                    style={{ fontSize: '0.7rem', padding: '3px 8px', backgroundColor: 'rgba(30,65,100,0.08)', borderRadius: '12px', color: 'var(--primary)', cursor: 'pointer', textDecoration: 'underline' }}
-                                    title={language === 'ar' ? 'اضغط لعرض تفاصيل المشروع' : 'Click to view project details'}
-                                  >
-                                    {ap.title}
-                                  </span>
-                                ))}
-                              </div>
-                            )}
-                          </div>
-                        </div>
-
-                        <div style={{ display: 'flex', justifyContent: 'flex-end', gap: '8px', marginTop: '20px', paddingTop: '15px', borderTop: '1px solid rgba(0,0,0,0.08)' }}>
-                          <button onClick={() => handleEditDevProfile(prof)} className="btn btn-secondary" style={{ padding: '4px 10px', fontSize: '0.7rem', color: 'var(--primary)' }}>
-                            {language === 'ar' ? 'تعديل' : 'Edit'}
-                          </button>
-                          <button onClick={() => handleDeleteDevProfile(prof.id)} className="btn" style={{ padding: '4px 10px', fontSize: '0.7rem', backgroundColor: 'rgba(239, 68, 68, 0.15)', color: '#ef4444', border: 'none' }}>
-                            {language === 'ar' ? 'حذف' : 'Delete'}
-                          </button>
-                        </div>
-                      </div>
-                    );
-                  })}
-                </div>
-              )}
+              </form>
             </div>
           )}
 
-          {/* DEVELOPER PROFILE DETAILS MODAL PANEL */}
-          {showDevInfoModal && activeDevInfo && (
-            <div style={{ position: 'fixed', top: 0, left: 0, right: 0, bottom: 0, backgroundColor: 'rgba(0,0,0,0.6)', display: 'flex', justifyContent: 'center', alignItems: 'center', zIndex: 1000, padding: '20px' }}>
-              <div className="glass-panel" style={{ backgroundColor: 'white', maxWidth: '550px', width: '100%', padding: '25px', color: 'var(--primary)', borderRadius: 'var(--radius)' }}>
-                <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', borderBottom: '1px solid rgba(0,0,0,0.1)', paddingBottom: '10px', marginBottom: '15px' }}>
-                  <h3 style={{ fontSize: '1.3rem', color: 'var(--primary)', fontWeight: 'bold' }}>🏢 {activeDevInfo.name}</h3>
-                  <button onClick={() => setShowDevInfoModal(false)} style={{ border: 'none', background: 'none', fontSize: '1.2rem', cursor: 'pointer', color: 'var(--primary)' }}>✕</button>
-                </div>
-                
-                <div style={{ display: 'flex', flexDirection: 'column', gap: '15px' }}>
-                  <div>
-                    <span style={{ fontSize: '0.8rem', color: 'var(--text-muted)' }}>📅 {language === 'ar' ? 'سنة التأسيس:' : 'Founded Year:'}</span>
-                    <strong style={{ display: 'block', fontSize: '0.9rem', color: 'var(--primary)' }}>{activeDevInfo.foundedYear || '—'}</strong>
-                  </div>
-                  <div>
-                    <span style={{ fontSize: '0.8rem', color: 'var(--text-muted)' }}>📚 {language === 'ar' ? 'تاريخ المطور وسيرته المهنية (About):' : 'Developer History (About):'}</span>
-                    <p style={{ marginTop: '5px', fontSize: '0.85rem', color: '#444', lineHeight: 1.5, backgroundColor: 'rgba(30,65,100,0.03)', padding: '12px', borderRadius: 'var(--radius-sm)' }}>
-                      {activeDevInfo.about}
-                    </p>
-                  </div>
+          {/* Projects Card Grid */}
+          {projects.length === 0 ? (
+            <div className="glass-panel" style={{ padding: '60px 20px', textAlign: 'center', color: 'var(--text-muted)' }}>
+              <Layers size={48} style={{ marginBottom: '15px', color: 'var(--primary)' }} />
+              <p>{language === 'ar' ? 'لا توجد مشاريع مضافة حالياً.' : 'No projects found.'}</p>
+            </div>
+          ) : (
+            <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(320px, 1fr))', gap: '20px' }}>
+              {projects.filter(p => {
+                const query = projSearchQuery.toLowerCase();
+                return p.title.toLowerCase().includes(query) || (p.location && p.location.toLowerCase().includes(query));
+              }).map(proj => (
+                <div key={proj.id} className="glass-panel" style={{ display: 'flex', flexDirection: 'column', backgroundColor: 'white', color: 'var(--primary)', borderRadius: 'var(--radius)', overflow: 'hidden', padding: '0px', borderTop: '4px solid var(--accent)' }}>
+                  {proj.imgUrl ? (
+                    <img src={proj.imgUrl} alt={proj.title} style={{ width: '100%', height: '180px', objectFit: 'cover' }} />
+                  ) : (
+                    <div style={{ width: '100%', height: '180px', background: 'linear-gradient(135deg, var(--primary) 0%, #1e355e 100%)', display: 'flex', alignItems: 'center', justifyContent: 'center', color: 'white', flexDirection: 'column', gap: '10px' }}>
+                      <Layers size={40} style={{ opacity: 0.6 }} />
+                      <span style={{ fontSize: '0.8rem', opacity: 0.7 }}>{language === 'ar' ? 'لا توجد صورة' : 'No Image'}</span>
+                    </div>
+                  )}
                   
-                  {activeDevInfo.projectsList && (
+                  <div style={{ padding: '20px', display: 'flex', flexDirection: 'column', justifyContent: 'space-between', flex: '1' }}>
                     <div>
-                      <span style={{ fontSize: '0.8rem', color: 'var(--text-muted)' }}>📂 {language === 'ar' ? 'المشاريع التي يعمل بها المطور:' : 'Projects developed:'}</span>
-                      <p style={{ marginTop: '5px', fontSize: '0.85rem', color: '#444', lineHeight: 1.5, backgroundColor: 'rgba(245, 158, 11, 0.05)', padding: '10px', borderRadius: 'var(--radius-sm)', borderRight: '3px solid #f59e0b' }}>
-                        {activeDevInfo.projectsList}
-                      </p>
-                    </div>
-                  )}
-
-                  {activeDevInfo.notes && (
-                    <div>
-                      <span style={{ fontSize: '0.8rem', color: 'var(--text-muted)' }}>📝 {language === 'ar' ? 'ملاحظات عقارية مهمة:' : 'Brokerage Notes:'}</span>
-                      <p style={{ marginTop: '4px', fontSize: '0.8rem', color: '#555', fontStyle: 'italic' }}>
-                        {activeDevInfo.notes}
-                      </p>
-                    </div>
-                  )}
-
-                  {/* Associated Projects in the modal */}
-                  <div>
-                    <span style={{ fontSize: '0.8rem', color: 'var(--text-muted)', display: 'block', marginBottom: '8px' }}>📂 {language === 'ar' ? 'المشاريع التي يشارك فيها المطور بالموقع:' : 'Associated projects:'}</span>
-                    {projects.filter(proj => proj.developers && proj.developers.some((d: any) => d.name.toLowerCase().includes(activeDevInfo.name.toLowerCase()) || activeDevInfo.name.toLowerCase().includes(d.name.toLowerCase()))).length === 0 ? (
-                      <span style={{ fontSize: '0.8rem', color: 'var(--text-muted)', fontStyle: 'italic' }}>{language === 'ar' ? 'لا يشارك هذا المطور في أي مشاريع مدرجة حالياً.' : 'No associated projects.'}</span>
-                    ) : (
-                      <div style={{ display: 'flex', flexWrap: 'wrap', gap: '6px' }}>
-                        {projects.filter(proj => proj.developers && proj.developers.some((d: any) => d.name.toLowerCase().includes(activeDevInfo.name.toLowerCase()) || activeDevInfo.name.toLowerCase().includes(d.name.toLowerCase()))).map(proj => (
-                          <span 
-                            key={proj.id} 
-                            onClick={() => {
-                              setShowDevInfoModal(false);
-                              setProjectsTabMode('projects');
-                              setProjSearchQuery(proj.title);
-                            }}
-                            style={{ fontSize: '0.75rem', padding: '4px 10px', backgroundColor: 'rgba(30,65,100,0.08)', borderRadius: '12px', color: 'var(--primary)', cursor: 'pointer', textDecoration: 'underline' }}
-                          >
-                            {proj.title}
-                          </span>
-                        ))}
+                      <h4 style={{ fontSize: '1.2rem', marginBottom: '6px', color: 'var(--primary)', fontWeight: 'bold' }}>📂 {proj.title}</h4>
+                      <span style={{ fontSize: '0.8rem', color: 'var(--text-muted)', display: 'block', marginBottom: '12px' }}>
+                        📍 {proj.location || (language === 'ar' ? 'موقع غير محدد' : 'Unknown location')}
+                      </span>
+                      
+                      <div style={{ fontSize: '0.85rem', color: '#444', lineHeight: '1.5', whiteSpace: 'pre-line', marginBottom: '15px' }}>
+                        {proj.description || '—'}
                       </div>
-                    )}
+                    </div>
+                    
+                    <div style={{ display: 'flex', justifyContent: 'flex-end', gap: '8px', borderTop: '1px solid rgba(0,0,0,0.08)', paddingTop: '15px', marginTop: '10px' }}>
+                      <button onClick={() => handleEditProject(proj)} className="btn btn-secondary" style={{ padding: '4px 10px', fontSize: '0.75rem', color: 'var(--primary)' }}>
+                        {language === 'ar' ? 'تعديل' : 'Edit'}
+                      </button>
+                      <button onClick={() => handleDeleteProject(proj.id)} className="btn" style={{ padding: '4px 10px', fontSize: '0.75rem', backgroundColor: 'rgba(239, 68, 68, 0.15)', color: '#ef4444', border: 'none' }}>
+                        {language === 'ar' ? 'حذف' : 'Delete'}
+                      </button>
+                    </div>
                   </div>
                 </div>
-
-                <div style={{ display: 'flex', justifyContent: 'flex-end', marginTop: '20px', paddingTop: '15px', borderTop: '1px solid rgba(0,0,0,0.1)' }}>
-                  <button onClick={() => setShowDevInfoModal(false)} className="btn btn-primary" style={{ padding: '6px 20px', fontSize: '0.85rem' }}>
-                    {language === 'ar' ? 'إغلاق' : 'Close'}
-                  </button>
-                </div>
-              </div>
+              ))}
             </div>
           )}
         </div>
