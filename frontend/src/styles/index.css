@@ -279,6 +279,10 @@ body {
     padding: 20px 15px !important;
     gap: 20px !important;
   }
+  
+  .whatsapp-float-btn {
+    bottom: 80px !important;
+  }
 }
 
 .marketplace-details-container {

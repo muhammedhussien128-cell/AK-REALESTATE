@@ -261,6 +261,7 @@ function AppContent() {
         rel="noopener noreferrer"
         whileHover={{ scale: 1.05 }}
         whileTap={{ scale: 0.95 }}
+        className="whatsapp-float-btn"
         style={{
           position: 'fixed',
           bottom: '25px',
