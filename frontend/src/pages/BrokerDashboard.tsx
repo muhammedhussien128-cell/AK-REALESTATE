@@ -271,6 +271,38 @@ export const BrokerDashboard: React.FC = () => {
     reader.readAsDataURL(file);
   };
 
+  const handleListingImageUpload = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (!file) return;
+
+    const reader = new FileReader();
+    reader.onloadend = () => {
+      const img = document.createElement('img');
+      img.src = reader.result as string;
+      img.onload = () => {
+        const canvas = document.createElement('canvas');
+        const MAX_WIDTH = 800;
+        let width = img.width;
+        let height = img.height;
+
+        if (width > MAX_WIDTH) {
+          height = Math.round((height * MAX_WIDTH) / width);
+          width = MAX_WIDTH;
+        }
+
+        canvas.width = width;
+        canvas.height = height;
+        const ctx = canvas.getContext('2d');
+        if (ctx) {
+          ctx.drawImage(img, 0, 0, width, height);
+          const compressedBase64 = canvas.toDataURL('image/jpeg', 0.6);
+          setImgUrl(compressedBase64);
+        }
+      };
+    };
+    reader.readAsDataURL(file);
+  };
+
   const handleDeleteProject = async (projId: string) => {
     if (!window.confirm(language === 'ar' ? 'هل أنت متأكد من رغبتك في حذف هذا المشروع تماماً؟' : 'Are you sure you want to delete this project?')) return;
     try {
@@ -1595,18 +1627,27 @@ export const BrokerDashboard: React.FC = () => {
                 </div>
 
                 <div className="form-group">
-                  <label className="form-label">رابط صورة العقار</label>
-                  <div style={{ position: 'relative' }}>
-                    <Image size={18} style={{ position: 'absolute', right: '12px', top: '15px', color: 'var(--text-muted)' }} />
-                    <input 
-                      type="url" 
-                      className="form-control" 
-                      placeholder="https://images.unsplash.com/..." 
-                      value={imgUrl} 
-                      onChange={e => setImgUrl(e.target.value)}
-                      style={{ paddingRight: '40px' }} 
-                    />
-                  </div>
+                  <label className="form-label">{language === 'ar' ? 'صورة العقار (رفع من الجهاز)' : 'Property Image (Upload from device)'}</label>
+                  <input 
+                    type="file" 
+                    accept="image/*" 
+                    className="form-control" 
+                    onChange={handleListingImageUpload} 
+                    style={{ display: 'block', width: '100%', padding: '8px' }} 
+                  />
+                  {imgUrl && (
+                    <div style={{ marginTop: '10px', display: 'flex', alignItems: 'center', gap: '10px' }}>
+                      <img src={imgUrl} alt="Preview" style={{ width: '80px', height: '60px', objectFit: 'cover', borderRadius: '4px', border: '1px solid var(--accent)' }} />
+                      <button 
+                        type="button" 
+                        onClick={() => setImgUrl('')} 
+                        className="btn" 
+                        style={{ padding: '4px 10px', fontSize: '0.75rem', backgroundColor: 'rgba(239, 68, 68, 0.15)', color: '#ef4444', border: 'none', borderRadius: '4px' }}
+                      >
+                        {language === 'ar' ? 'إزالة الصورة' : 'Remove Image'}
+                      </button>
+                    </div>
+                  )}
                 </div>
 
                 <div className="form-group">
