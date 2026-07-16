@@ -722,7 +722,7 @@ export const BrokerDashboard: React.FC = () => {
                         <button 
                           onClick={() => handleDeleteLead(lead.id)}
                           className="btn btn-secondary" 
-                          style={{ padding: '6px 10px', hover: { backgroundColor: 'var(--danger)' } }}
+                          style={{ padding: '6px 10px' }}
                           title={language === 'ar' ? 'حذف' : 'Delete'}
                         >
                           <Trash2 size={14} style={{ color: 'var(--danger)' }} />

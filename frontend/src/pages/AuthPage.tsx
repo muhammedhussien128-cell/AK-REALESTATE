@@ -4,7 +4,7 @@ import { motion, AnimatePresence } from 'framer-motion';
 import { KeyRound, Mail, Phone, User, Landmark, ShieldCheck } from 'lucide-react';
 
 export const AuthPage: React.FC = () => {
-  const { login, register, error } = useAuth();
+  const { login, register } = useAuth();
   const [isLogin, setIsLogin] = useState<boolean>(true);
   const [name, setName] = useState('');
   const [email, setEmail] = useState('');
