@@ -37,9 +37,9 @@ export const tempUserStore: any[] = [
     id: 'b1111111-1111-1111-1111-111111111111',
     tenant_id: 'tenant-nawy-uuid-1111',
     email: 'broker@semsar.com',
-    phone: '+201000000001',
+    phone: '01027484938',
     password_hash: bcrypt.hashSync('broker123', 10),
-    name: 'أحمد السمسار (Awtad)',
+    name: 'Ahmed Khaled',
     role: 'broker'
   },
   {
