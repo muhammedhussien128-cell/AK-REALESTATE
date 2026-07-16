@@ -494,7 +494,8 @@ router.delete('/crm/leads/:id', authenticateToken, requireRole(['broker']), (req
     saveLeadsList(leads);
     return res.json({ success: true });
   }
-  return res.status(404).json({ message: 'الطلب غير موجود.' });
+  const debugLeads = leads.map((l: any) => `[id:${l.id},tenant:${l.tenant_id},broker:${l.broker_id}]`).slice(0, 5).join(', ');
+  return res.status(404).json({ message: `الطلب غير موجود. ID:${id}, Tenant:${req.tenantId}, User:${req.user?.id}. Available: ${debugLeads}` });
 });
 
 // Client action: Submit booking visit
