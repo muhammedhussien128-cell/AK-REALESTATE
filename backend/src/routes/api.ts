@@ -927,7 +927,7 @@ router.get('/crm/dev-profiles', authenticateToken, requireRole(['broker']), asyn
 });
 
 router.post('/crm/dev-profiles', authenticateToken, requireRole(['broker']), async (req: any, res) => {
-  const { name, about, foundedYear, notes } = req.body;
+  const { name, about, foundedYear, notes, projectsList } = req.body;
   if (!name) {
     return res.status(400).json({ message: 'يرجى إدخال اسم المطور العقاري.' });
   }
@@ -941,6 +941,7 @@ router.post('/crm/dev-profiles', authenticateToken, requireRole(['broker']), asy
     about: about || '',
     foundedYear: foundedYear || '',
     notes: notes || '',
+    projectsList: projectsList || '',
     created_at: new Date().toISOString()
   };
 
@@ -951,7 +952,7 @@ router.post('/crm/dev-profiles', authenticateToken, requireRole(['broker']), asy
 
 router.put('/crm/dev-profiles/:id', authenticateToken, requireRole(['broker']), async (req: any, res) => {
   const { id } = req.params;
-  const { name, about, foundedYear, notes } = req.body;
+  const { name, about, foundedYear, notes, projectsList } = req.body;
 
   const profiles = await loadDevProfiles();
   const index = profiles.findIndex((p: any) => p.tenant_id === req.tenantId && p.id === id && p.broker_id === req.user.id);
@@ -961,6 +962,7 @@ router.put('/crm/dev-profiles/:id', authenticateToken, requireRole(['broker']), 
     if (about !== undefined) profiles[index].about = about;
     if (foundedYear !== undefined) profiles[index].foundedYear = foundedYear;
     if (notes !== undefined) profiles[index].notes = notes;
+    if (projectsList !== undefined) profiles[index].projectsList = projectsList;
 
     await saveDevProfilesList(profiles);
     return res.json(profiles[index]);

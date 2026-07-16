@@ -99,6 +99,7 @@ export const BrokerDashboard: React.FC = () => {
     about: string;
     foundedYear: string;
     notes: string;
+    projectsList?: string;
     created_at: string;
   }
   const [devProfiles, setDevProfiles] = useState<DevProfile[]>([]);
@@ -115,6 +116,7 @@ export const BrokerDashboard: React.FC = () => {
   const [devAboutField, setDevAboutField] = useState('');
   const [devFoundedField, setDevFoundedField] = useState('');
   const [devNotesField, setDevNotesField] = useState('');
+  const [devProjectsListField, setDevProjectsListField] = useState('');
 
   // Tab mode for Projects Reference (either 'projects' or 'developers')
   const [projectsTabMode, setProjectsTabMode] = useState<'projects' | 'developers'>('projects');
@@ -362,7 +364,8 @@ export const BrokerDashboard: React.FC = () => {
       name: devNameField,
       about: devAboutField,
       foundedYear: devFoundedField,
-      notes: devNotesField
+      notes: devNotesField,
+      projectsList: devProjectsListField
     };
 
     try {
@@ -387,6 +390,7 @@ export const BrokerDashboard: React.FC = () => {
         setDevAboutField('');
         setDevFoundedField('');
         setDevNotesField('');
+        setDevProjectsListField('');
       }
     } catch (err) {}
   };
@@ -397,6 +401,7 @@ export const BrokerDashboard: React.FC = () => {
     setDevAboutField(prof.about);
     setDevFoundedField(prof.foundedYear);
     setDevNotesField(prof.notes);
+    setDevProjectsListField(prof.projectsList || '');
     setShowDevProfileEditor(true);
   };
 
@@ -1307,6 +1312,10 @@ export const BrokerDashboard: React.FC = () => {
                       <textarea className="form-control" rows={3} value={devAboutField} onChange={e => setDevAboutField(e.target.value)} placeholder={language === 'ar' ? 'تاريخ الشركة، سابقة أعمالها، وتوجهها...' : 'Company history, past projects...'} style={{ resize: 'vertical' }} />
                     </div>
                     <div style={{ gridColumn: 'span 2' }}>
+                      <label style={{ display: 'block', marginBottom: '5px', fontSize: '0.85rem', color: 'var(--text-muted)' }}>{language === 'ar' ? 'المشاريع التي يعمل بها المطور / سابقة الأعمال' : 'Projects developed / track record'}</label>
+                      <input type="text" className="form-control" value={devProjectsListField} onChange={e => setDevProjectsListField(e.target.value)} placeholder={language === 'ar' ? 'مثال: مدينتي، الرحاب، سيليا، بادية بالم هيلز...' : 'e.g. Madinaty, Al Rehab, Badya...'} />
+                    </div>
+                    <div style={{ gridColumn: 'span 2' }}>
                       <label style={{ display: 'block', marginBottom: '5px', fontSize: '0.85rem', color: 'var(--text-muted)' }}>{language === 'ar' ? 'ملاحظات إضافية' : 'Additional Notes'}</label>
                       <textarea className="form-control" rows={2} value={devNotesField} onChange={e => setDevNotesField(e.target.value)} style={{ resize: 'vertical' }} />
                     </div>
@@ -1346,6 +1355,13 @@ export const BrokerDashboard: React.FC = () => {
                             <strong>{language === 'ar' ? 'نبذة وتاريخ المطور:' : 'About/History:'}</strong>
                             <p style={{ marginTop: '4px', backgroundColor: 'rgba(30,65,100,0.02)', padding: '8px', borderRadius: 'var(--radius-sm)' }}>{prof.about || '—'}</p>
                           </div>
+
+                          {prof.projectsList && (
+                            <div style={{ fontSize: '0.8rem', color: '#444', lineHeight: '1.4', marginBottom: '15px' }}>
+                              <strong>{language === 'ar' ? 'المشاريع التي يعمل بها المطور:' : 'Projects developed:'}</strong>
+                              <p style={{ marginTop: '4px', backgroundColor: 'rgba(245, 158, 11, 0.05)', padding: '8px', borderRadius: 'var(--radius-sm)', borderRight: '3px solid #f59e0b' }}>{prof.projectsList}</p>
+                            </div>
+                          )}
 
                           {prof.notes && (
                             <div style={{ fontSize: '0.75rem', color: '#666', marginBottom: '15px' }}>
@@ -1417,6 +1433,15 @@ export const BrokerDashboard: React.FC = () => {
                     </p>
                   </div>
                   
+                  {activeDevInfo.projectsList && (
+                    <div>
+                      <span style={{ fontSize: '0.8rem', color: 'var(--text-muted)' }}>📂 {language === 'ar' ? 'المشاريع التي يعمل بها المطور:' : 'Projects developed:'}</span>
+                      <p style={{ marginTop: '5px', fontSize: '0.85rem', color: '#444', lineHeight: 1.5, backgroundColor: 'rgba(245, 158, 11, 0.05)', padding: '10px', borderRadius: 'var(--radius-sm)', borderRight: '3px solid #f59e0b' }}>
+                        {activeDevInfo.projectsList}
+                      </p>
+                    </div>
+                  )}
+
                   {activeDevInfo.notes && (
                     <div>
                       <span style={{ fontSize: '0.8rem', color: 'var(--text-muted)' }}>📝 {language === 'ar' ? 'ملاحظات عقارية مهمة:' : 'Brokerage Notes:'}</span>
