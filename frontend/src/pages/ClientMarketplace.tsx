@@ -228,7 +228,9 @@ export const ClientMarketplace: React.FC<{ onNavigateToAuth: () => void; onNavig
 
   useEffect(() => {
     const gateCompleted = localStorage.getItem('awtad_welcome_gate_completed');
-    if (!user && !gateCompleted) {
+    if (user || gateCompleted) {
+      setShowWelcomeGate(false);
+    } else {
       setShowWelcomeGate(true);
     }
   }, [user]);
@@ -870,10 +872,10 @@ export const ClientMarketplace: React.FC<{ onNavigateToAuth: () => void; onNavig
               </form>
 
               <button 
-                onClick={handleSkipWelcomeGate}
-                style={{ background: 'none', border: 'none', color: 'rgba(255,255,255,0.5)', fontSize: '0.8rem', marginTop: '20px', cursor: 'pointer', textDecoration: 'underline', display: 'block', margin: '20px auto 0 auto' }}
+                onClick={onNavigateToAuth}
+                style={{ background: 'none', border: 'none', color: 'rgba(255,255,255,0.8)', fontSize: '0.85rem', marginTop: '20px', cursor: 'pointer', textDecoration: 'underline', display: 'block', margin: '20px auto 0 auto', fontWeight: 'bold' }}
               >
-                {language === 'ar' ? 'تخطي والدخول كزائر' : 'Skip and browse as guest'}
+                {language === 'ar' ? 'هل لديك حساب بالفعل؟' : 'Already have an account?'}
               </button>
 
               <button 
