@@ -1320,7 +1320,9 @@ export const BrokerDashboard: React.FC = () => {
                 { key: 'facebook', label: '🟦 فيسبوك' },
                 { key: 'tiktok', label: '🖤 تيك توك' },
                 { key: 'instagram', label: '🟪 إنستجرام' },
-                { key: 'linkedin', label: '💙 لينكد إن' }
+                { key: 'linkedin', label: '💙 لينكد إن' },
+                { key: 'snapchat', label: '💛 سناب شات' },
+                { key: 'x', label: '🖤 منصة X' }
               ].map(p => (
                 <button 
                   key={p.key}
