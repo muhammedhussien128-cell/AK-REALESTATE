@@ -867,7 +867,7 @@ router.get('/crm/projects', authenticateToken, requireRole(['broker']), async (r
 });
 
 router.post('/crm/projects', authenticateToken, requireRole(['broker']), async (req: any, res) => {
-  const { title, location, developers } = req.body;
+  const { title, location, description, imgUrl } = req.body;
   if (!title) {
     return res.status(400).json({ message: 'يرجى إدخال اسم المشروع.' });
   }
@@ -879,7 +879,8 @@ router.post('/crm/projects', authenticateToken, requireRole(['broker']), async (
     broker_id: req.user.id,
     title,
     location: location || '',
-    developers: developers || [],
+    description: description || '',
+    imgUrl: imgUrl || '',
     created_at: new Date().toISOString()
   };
 
@@ -890,7 +891,7 @@ router.post('/crm/projects', authenticateToken, requireRole(['broker']), async (
 
 router.put('/crm/projects/:id', authenticateToken, requireRole(['broker']), async (req: any, res) => {
   const { id } = req.params;
-  const { title, location, developers } = req.body;
+  const { title, location, description, imgUrl } = req.body;
 
   const projects = await loadProjects();
   const index = projects.findIndex((p: any) => p.tenant_id === req.tenantId && p.id === id && p.broker_id === req.user.id);
@@ -898,7 +899,8 @@ router.put('/crm/projects/:id', authenticateToken, requireRole(['broker']), asyn
   if (index !== -1) {
     if (title !== undefined) projects[index].title = title;
     if (location !== undefined) projects[index].location = location;
-    if (developers !== undefined) projects[index].developers = developers;
+    if (description !== undefined) projects[index].description = description;
+    if (imgUrl !== undefined) projects[index].imgUrl = imgUrl;
 
     await saveProjectsList(projects);
     return res.json(projects[index]);
