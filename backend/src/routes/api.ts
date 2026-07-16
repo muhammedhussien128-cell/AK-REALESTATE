@@ -348,6 +348,7 @@ router.post('/crm/visitor-activity', async (req: any, res) => {
   }
 
   if (targetLeads.length > 0) {
+    const listings = await loadListings();
     targetLeads.forEach(targetLead => {
       if (timeOnSite) {
         targetLead.time_on_site = timeOnSite;
@@ -367,7 +368,6 @@ router.post('/crm/visitor-activity', async (req: any, res) => {
         if (!targetLead.viewed_history) {
           targetLead.viewed_history = [];
         }
-        const listings = await loadListings();
         const targetListing = listings.find(l => l.title === listingTitle);
         const priceVal = targetListing ? targetListing.price : 4500000; 
 
@@ -662,7 +662,7 @@ Never invent properties, prices, or details.
       });
 
       if (response.ok) {
-        const data = await response.json();
+        const data = (await response.json()) as any;
         const responseText = data.candidates?.[0]?.content?.parts?.[0]?.text;
         if (responseText) {
           return res.json({ text: responseText });
