@@ -735,7 +735,7 @@ export const ClientMarketplace: React.FC<{ onNavigateToAuth: () => void; onNavig
               }}
             >
               <h2 style={{ fontSize: '1.6rem', color: 'white', marginBottom: '15px', fontWeight: 800 }}>
-                {language === 'ar' ? 'أهلاً بك في أوتاد العقارية!' : 'Welcome to Awtad Real Estate!'}
+                {language === 'ar' ? 'أهلاً بك في منصة AK!' : 'Welcome to AK!'}
               </h2>
               <p style={{ color: 'rgba(255,255,255,0.8)', fontSize: '0.9rem', marginBottom: '30px', lineHeight: 1.6 }}>
                 {language === 'ar' 
