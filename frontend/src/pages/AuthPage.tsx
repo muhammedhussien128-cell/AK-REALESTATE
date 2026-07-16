@@ -67,7 +67,7 @@ export const AuthPage: React.FC = () => {
           </p>
         </div>
 
-        {(localError || error) && (
+        {localError && (
           <motion.div 
             initial={{ opacity: 0, scale: 0.95 }}
             animate={{ opacity: 1, scale: 1 }}
@@ -82,7 +82,7 @@ export const AuthPage: React.FC = () => {
               textAlign: 'center'
             }}
           >
-            {localError || error}
+            {localError}
           </motion.div>
         )}
 

@@ -1169,7 +1169,7 @@ export const ClientMarketplace: React.FC<{ onNavigateToAuth: () => void; onNavig
                     </span>
                   </div>
 
-                  <div style={{ display: 'flex', justifyContext: 'space-between', alignItems: 'center', marginTop: '15px' }}>
+                  <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginTop: '15px' }}>
                     <div>
                       <span style={{ fontSize: '1.25rem', fontWeight: 'bold', color: 'var(--primary)' }}>
                         {listing.price.toLocaleString('ar-EG')}
