@@ -244,24 +244,29 @@ export const BrokerDashboard: React.FC = () => {
     if (!file) return;
 
     const reader = new FileReader();
-    reader.onloadend = async () => {
-      const base64Image = reader.result as string;
-      try {
-        const response = await fetch('/api/upload', {
-          method: 'POST',
-          headers: {
-            'Content-Type': 'application/json',
-            'Authorization': `Bearer ${token}`
-          },
-          body: JSON.stringify({ image: base64Image })
-        });
-        if (response.ok) {
-          const data = await response.json();
-          setProjImgUrl(data.url);
+    reader.onloadend = () => {
+      const img = document.createElement('img');
+      img.src = reader.result as string;
+      img.onload = () => {
+        const canvas = document.createElement('canvas');
+        const MAX_WIDTH = 800;
+        let width = img.width;
+        let height = img.height;
+
+        if (width > MAX_WIDTH) {
+          height = Math.round((height * MAX_WIDTH) / width);
+          width = MAX_WIDTH;
         }
-      } catch (err) {
-        console.error('Image upload failed:', err);
-      }
+
+        canvas.width = width;
+        canvas.height = height;
+        const ctx = canvas.getContext('2d');
+        if (ctx) {
+          ctx.drawImage(img, 0, 0, width, height);
+          const compressedBase64 = canvas.toDataURL('image/jpeg', 0.6); // 60% quality JPEG is very small and clear
+          setProjImgUrl(compressedBase64);
+        }
+      };
     };
     reader.readAsDataURL(file);
   };
