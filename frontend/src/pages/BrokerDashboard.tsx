@@ -483,8 +483,13 @@ export const BrokerDashboard: React.FC = () => {
       });
       if (response.ok) {
         fetchBrokerListings();
+      } else {
+        const errorData = await response.json().catch(() => ({}));
+        alert(errorData.message || 'حدث خطأ أثناء حذف العقار.');
       }
-    } catch (e) {}
+    } catch (e) {
+      alert('حدث خطأ في الاتصال بالخادم.');
+    }
   };
 
   const handleUpdateStatus = async (id: string, newStatus: 'available' | 'reserved' | 'sold') => {

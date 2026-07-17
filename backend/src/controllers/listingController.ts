@@ -162,7 +162,7 @@ export const updateListing = (req: AuthenticatedRequest & TenantRequest, res: Re
     return res.status(404).json({ message: 'العقار غير موجود.' });
   }
 
-  if (listings[index].broker_id !== req.user!.id) {
+  if (listings[index].tenant_id !== req.tenantId) {
     return res.status(403).json({ message: 'غير مصرح لك بتعديل هذا العقار.' });
   }
 
@@ -187,7 +187,7 @@ export const deleteListing = (req: AuthenticatedRequest & TenantRequest, res: Re
     return res.status(404).json({ message: 'العقار غير موجود.' });
   }
 
-  if (listings[index].broker_id !== req.user!.id) {
+  if (listings[index].tenant_id !== req.tenantId) {
     return res.status(403).json({ message: 'غير مصرح لك بحذف هذا العقار.' });
   }
 
