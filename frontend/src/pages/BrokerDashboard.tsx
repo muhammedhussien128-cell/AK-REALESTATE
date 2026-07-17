@@ -43,7 +43,7 @@ interface Lead {
 }
 
 export const BrokerDashboard: React.FC = () => {
-  const { user, token, updateProfile } = useAuth();
+  const { user, token, updateProfile, logout } = useAuth();
   const { t, language } = useLanguage();
   const { tenant, updateTenantPhone } = useTenant();
   
@@ -484,6 +484,11 @@ export const BrokerDashboard: React.FC = () => {
       if (response.ok) {
         fetchBrokerListings();
       } else {
+        if (response.status === 401 || response.status === 403) {
+          alert(language === 'ar' ? 'انتهت صلاحية الجلسة الأمنية. يرجى تسجيل الدخول مرة أخرى لتحديث صلاحياتك.' : 'Session expired. Please log in again.');
+          logout();
+          return;
+        }
         const errorData = await response.json().catch(() => ({}));
         alert(errorData.message || 'حدث خطأ أثناء حذف العقار.');
       }
