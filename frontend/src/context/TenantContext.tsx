@@ -16,7 +16,7 @@ const TENANT_PRESETS: Record<TenantSubdomain, TenantConfig> = {
     name: 'AK',
     primaryColor: '#1e4164', 
     secondaryColor: '#7dcbc1',
-    phone: '01027484938' 
+    phone: '+201027484938' 
   },
   aqar: {
     subdomain: 'aqar',

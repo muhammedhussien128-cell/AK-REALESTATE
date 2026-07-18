@@ -18,7 +18,7 @@ export const MOCK_TENANTS: Record<string, { id: string; name: string; primaryCol
     name: "أوتاد مصر (Awtad Egypt)",
     primaryColor: "#1e4164",
     secondaryColor: "#7dcbc1",
-    phone: "01027484938" 
+    phone: "+201027484938" 
   },
   "aqar": {
     id: "tenant-aqar-uuid-2222",
