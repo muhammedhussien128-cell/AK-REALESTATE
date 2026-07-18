@@ -49,35 +49,35 @@ export const initMemory = async () => {
     const leadsRes = await fetch(`${KV_URL}/leads`);
     if (leadsRes.ok) {
       const kvLeads = await leadsRes.json();
-      if (Array.isArray(kvLeads) && kvLeads.length > 0) memoryLeads = kvLeads;
+      if (Array.isArray(kvLeads)) memoryLeads = kvLeads;
     }
   } catch (e) {}
   try {
     const clientsRes = await fetch(`${KV_URL}/clients`);
     if (clientsRes.ok) {
       const kvClients = await clientsRes.json();
-      if (Array.isArray(kvClients) && kvClients.length > 0) memoryClients = kvClients;
+      if (Array.isArray(kvClients)) memoryClients = kvClients;
     }
   } catch (e) {}
   try {
     const listingsRes = await fetch(`${KV_URL}/listings`);
     if (listingsRes.ok) {
       const kvListings = await listingsRes.json();
-      if (Array.isArray(kvListings) && kvListings.length > 0) memoryListings = kvListings;
+      if (Array.isArray(kvListings)) memoryListings = kvListings;
     }
   } catch (e) {}
   try {
     const projectsRes = await fetch(`${KV_URL}/projects`);
     if (projectsRes.ok) {
       const kvProjects = await projectsRes.json();
-      if (Array.isArray(kvProjects) && kvProjects.length > 0) memoryProjects = kvProjects;
+      if (Array.isArray(kvProjects)) memoryProjects = kvProjects;
     }
   } catch (e) {}
   try {
     const devProfilesRes = await fetch(`${KV_URL}/dev_profiles`);
     if (devProfilesRes.ok) {
       const kvDevProfiles = await devProfilesRes.json();
-      if (Array.isArray(kvDevProfiles) && kvDevProfiles.length > 0) memoryDevProfiles = kvDevProfiles;
+      if (Array.isArray(kvDevProfiles)) memoryDevProfiles = kvDevProfiles;
     }
   } catch (e) {}
 
