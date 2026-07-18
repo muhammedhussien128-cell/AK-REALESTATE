@@ -2,8 +2,7 @@ import { Response } from 'express';
 import { AuthenticatedRequest } from '../middleware/auth';
 import { TenantRequest } from '../middleware/tenant';
 import { tempUserStore } from './authController';
-import fs from 'fs';
-import path from 'path';
+import { loadListings, saveListingsList } from '../utils/db';
 
 export interface Listing {
   id: string;
@@ -26,35 +25,6 @@ export interface Listing {
   created_at: string;
 }
 
-const listingsFilePath = path.join(__dirname, '../../listings.json');
-
-let memoryListings: Listing[] = [];
-let memoryInitialized = false;
-
-const loadListings = (): Listing[] => {
-  if (!memoryInitialized) {
-    try {
-      if (fs.existsSync(listingsFilePath)) {
-        const fileData = fs.readFileSync(listingsFilePath, 'utf-8');
-        memoryListings = JSON.parse(fileData);
-      }
-    } catch (error) {
-      console.error('Error reading listings file', error);
-    }
-    memoryInitialized = true;
-  }
-  return memoryListings;
-};
-
-const saveListings = (listings: Listing[]) => {
-  memoryListings = listings;
-  try {
-    fs.writeFileSync(listingsFilePath, JSON.stringify(listings, null, 2), 'utf-8');
-  } catch (error) {
-    console.error('Error writing to listings file', error);
-  }
-};
-
 // Helper to inject up-to-date broker details from tempUserStore
 const injectBrokerDetails = (listing: Listing): Listing => {
   const broker = tempUserStore.find(u => u.id === listing.broker_id);
@@ -68,8 +38,8 @@ const injectBrokerDetails = (listing: Listing): Listing => {
   return listing;
 };
 
-export const getAllListings = (req: TenantRequest, res: Response) => {
-  let listings = loadListings();
+export const getAllListings = async (req: TenantRequest, res: Response) => {
+  let listings = await loadListings();
   
   listings = listings.filter(l => l.tenant_id === req.tenantId);
 
@@ -109,8 +79,8 @@ export const getAllListings = (req: TenantRequest, res: Response) => {
   return res.json(detailedListings);
 };
 
-export const getListingById = (req: TenantRequest, res: Response) => {
-  const listings = loadListings();
+export const getListingById = async (req: TenantRequest, res: Response) => {
+  const listings = await loadListings();
   const listing = listings.find(l => l.tenant_id === req.tenantId && l.id === req.params.id);
   if (!listing) {
     return res.status(404).json({ message: 'العقار غير موجود.' });
@@ -118,14 +88,14 @@ export const getListingById = (req: TenantRequest, res: Response) => {
   return res.json(injectBrokerDetails(listing));
 };
 
-export const createListing = (req: AuthenticatedRequest & TenantRequest, res: Response) => {
+export const createListing = async (req: AuthenticatedRequest & TenantRequest, res: Response) => {
   const { title, description, price, location, unit_count, bedrooms, bathrooms, area, finishing, images, tags } = req.body;
 
   if (!title || !description || !price || !location) {
     return res.status(400).json({ message: 'يرجى ملء جميع الحقول المطلوبة لإنشاء عقار.' });
   }
 
-  const listings = loadListings();
+  const listings = await loadListings();
 
   const newListing: Listing = {
     id: Math.random().toString(36).substr(2, 9),
@@ -148,14 +118,14 @@ export const createListing = (req: AuthenticatedRequest & TenantRequest, res: Re
   };
 
   listings.unshift(newListing);
-  saveListings(listings);
+  await saveListingsList(listings);
 
   return res.status(201).json(injectBrokerDetails(newListing));
 };
 
-export const updateListing = (req: AuthenticatedRequest & TenantRequest, res: Response) => {
+export const updateListing = async (req: AuthenticatedRequest & TenantRequest, res: Response) => {
   const { id } = req.params;
-  const listings = loadListings();
+  const listings = await loadListings();
   const index = listings.findIndex(l => l.tenant_id === req.tenantId && l.id === id);
 
   if (index === -1) {
@@ -174,13 +144,13 @@ export const updateListing = (req: AuthenticatedRequest & TenantRequest, res: Re
     broker_id: listings[index].broker_id
   };
 
-  saveListings(listings);
+  await saveListingsList(listings);
   return res.json(injectBrokerDetails(listings[index]));
 };
 
-export const deleteListing = (req: AuthenticatedRequest & TenantRequest, res: Response) => {
+export const deleteListing = async (req: AuthenticatedRequest & TenantRequest, res: Response) => {
   const { id } = req.params;
-  const listings = loadListings();
+  const listings = await loadListings();
   const index = listings.findIndex(l => l.tenant_id === req.tenantId && l.id === id);
 
   if (index === -1) {
@@ -192,7 +162,7 @@ export const deleteListing = (req: AuthenticatedRequest & TenantRequest, res: Re
   }
 
   listings.splice(index, 1);
-  saveListings(listings);
+  await saveListingsList(listings);
 
   return res.json({ message: 'تم حذف العقار بنجاح.' });
 };
