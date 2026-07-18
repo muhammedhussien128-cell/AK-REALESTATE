@@ -38,7 +38,7 @@ export const tempUserStore: any[] = [
     tenant_id: 'tenant-nawy-uuid-1111',
     email: 'broker@semsar.com',
     phone: '01027484938',
-    password_hash: bcrypt.hashSync('broker123', 10),
+    password_hash: bcrypt.hashSync('AhKh_2026_Sec', 10),
     name: 'Ahmed Khaled',
     role: 'broker'
   },
@@ -47,7 +47,7 @@ export const tempUserStore: any[] = [
     tenant_id: 'tenant-aqar-uuid-2222',
     email: 'broker@aqar.com',
     phone: '+201000000003',
-    password_hash: bcrypt.hashSync('broker123', 10),
+    password_hash: bcrypt.hashSync('Aqar_2026_Sec', 10),
     name: 'أحمد عقار (Aqar)',
     role: 'broker'
   },
@@ -56,7 +56,7 @@ export const tempUserStore: any[] = [
     tenant_id: 'tenant-nawy-uuid-1111',
     email: 'client@semsar.com',
     phone: '+201000000002',
-    password_hash: bcrypt.hashSync('client123', 10),
+    password_hash: bcrypt.hashSync('Client_2026_Sec', 10),
     name: 'خالد المشتري',
     role: 'client'
   }
